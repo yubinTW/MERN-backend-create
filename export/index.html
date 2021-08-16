@@ -463,6 +463,27 @@ export { server }
 
             </section>
         
+            <section >
+                <p>Define custom npm scripts</p>
+<ul>
+<li>edit backend/package.json</li>
+</ul>
+<pre><code class="language-json=">&quot;scripts&quot;: {
+  &quot;build&quot;: &quot;tsc&quot;,
+  &quot;start&quot;: &quot;node out/index.js&quot;
+},
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Use custom npm script</p>
+<pre><code class="language-plaintext=">npm run build
+npm run start
+</code></pre>
+
+            </section>
+        
 
     </section>
     
@@ -504,27 +525,6 @@ export { server }
 
             </section>
         
-            <section >
-                <p>Define custom npm scripts</p>
-<ul>
-<li>edit backend/package.json</li>
-</ul>
-<pre><code class="language-json=">&quot;scripts&quot;: {
-  &quot;build&quot;: &quot;tsc&quot;,
-  &quot;start&quot;: &quot;node out/index.js&quot;
-},
-</code></pre>
-
-            </section>
-        
-            <section >
-                <p>Use custom npm script</p>
-<pre><code class="language-plaintext=">npm run build
-npm run start
-</code></pre>
-
-            </section>
-        
 
     </section>
     
@@ -542,8 +542,615 @@ out
             </section>
         
             <section >
-                <p>get more example</p>
+                <p>get more .gitignore example</p>
 <p><a href="https://github.com/github/gitignore">https://github.com/github/gitignore</a></p>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Add mongo support</p>
+
+            </section>
+        
+            <section >
+                <p>Start a mongodb server</p>
+<ul>
+<li>using docker</li>
+</ul>
+<pre><code>docker run -d -p 27017:27017 mongo
+</code></pre>
+<ul>
+<li>or binary</li>
+</ul>
+<pre><code>./mongod.exe
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Install mongoose</p>
+<pre><code>npm i mongoose
+npm i -D @types/mongoose
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Add env variables in backend/.env</p>
+<pre><code>MONGO_HOST=localhost
+MONGO_PORT=27017
+MONGO_DATABASE=myMERN
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Create backend/src/plugins/mongoose.ts</p>
+<pre><code class="language-typescript=">import mongoose from 'mongoose'
+
+const host = process.env.MONGO_HOST || 'localhost'
+const port = process.env.MONGO_PORT || 27017
+const database = process.env.MONGO_DATABASE || 'fastify'
+
+const establishConnection = () =&gt; {
+  if (!process.env.JEST_WORKER_ID &amp;&amp; mongoose.connection.readyState === 0) {
+    mongoose.connect(
+      `mongodb://${host}:${port}/${database}`,
+      { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false },
+      (err) =&gt; {
+        if (!err) console.log('MongoDB connection successful.')
+        else console.log('Error in DB connection : ' + JSON.stringify(err, undefined, 2))
+      }
+    )
+  }
+}
+
+export { establishConnection }
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Edit backend/src/server.ts</p>
+<pre><code class="language-typescript=">import { establishConnection } from './plugins/mongoose'
+
+// ...
+
+  server.listen(port, (err, _) =&gt; {
+      if (err) {
+          console.error(err)
+      }
+      establishConnection()
+  })
+
+// ...
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Start server</p>
+<p><img src="res/2021-08-17-03-19-36.png" alt=""></p>
+<p><code>MongoDB connection successful</code></p>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Add mongo schema</p>
+<p><a href="https://mongoosejs.com/docs/typescript.html">https://mongoosejs.com/docs/typescript.html</a></p>
+
+            </section>
+        
+            <section >
+                <p>Define interface</p>
+<p>create backend/src/types/cat.ts</p>
+<pre><code class="language-typescript=">interface ICat {
+    name: string
+    weight: number
+}
+
+export { ICat }
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Add mongo schema</p>
+<p>create backend/src/models/cat.ts</p>
+<pre><code class="language-typescript=">import { model, Schema } from 'mongoose'
+import { ICat } from '../types/cat'
+
+const catSchema: Schema = new Schema(
+    {
+        name: {
+            type: String,
+            required: true
+        },
+        weight: {
+            type: Number,
+            default: 0
+        }
+    },
+    {
+        timestamps: true
+    }
+)
+
+export default model&lt;ICat&gt;('Cat', catSchema)
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Get Cats</p>
+
+            </section>
+        
+            <section >
+                <p>Add Cat Repo</p>
+<pre><code class="language-typescript=">import { ICat } from './../types/cat'
+import Cat from './../models/cat'
+
+interface CatRepo {
+  getCats(): Promise&lt;Array&lt;ICat&gt;&gt;
+}
+
+class CatRepoImpl implements CatRepo {
+  private constructor() {}
+
+  static of(): CatRepoImpl {
+    return new CatRepoImpl()
+  }
+
+  async getCats(): Promise&lt;Array&lt;ICat&gt;&gt; {
+    return Cat.find()
+  }
+
+}
+
+export { CatRepoImpl }
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Add API endpoint</p>
+
+            </section>
+        
+            <section >
+                <p>edit backend/src/server.ts</p>
+<ul>
+<li>GET /cats</li>
+</ul>
+<pre><code class="language-typescript=">server.get('/cats', async (request, reply) =&gt; {
+  const catRepo = CatRepoImpl.of()
+  try {
+    const cats = await catRepo.getCats()
+    return reply.status(200).send({ cats })
+  } catch (error) {
+    return reply.status(500).send({ msg: 'Internal Server Error' })
+  }
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <ul>
+<li>send GET request by API Client</li>
+</ul>
+<p><img src="res/2021-08-17-04-53-04.png" alt=""></p>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Add Cat</p>
+
+            </section>
+        
+            <section >
+                <p>edit backend/src/repo/cat-repo.ts</p>
+<pre><code class="language-typescript=">import { ICat } from './../types/cat'
+import Cat from './../models/cat'
+
+interface CatRepo {
+  getCats(): Promise&lt;Array&lt;ICat&gt;&gt;
+  addCat(catBody: ICat): Promise&lt;ICat&gt;
+}
+
+class CatRepoImpl implements CatRepo {
+  private constructor() {}
+
+  static of(): CatRepoImpl {
+    return new CatRepoImpl()
+  }
+
+  async getCats(): Promise&lt;Array&lt;ICat&gt;&gt; {
+    return Cat.find()
+  }
+
+  async addCat(catBody: ICat): Promise&lt;ICat&gt; {
+    return Cat.create(catBody)
+  }
+
+}
+
+export { CatRepoImpl }
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Add API endpoint</p>
+
+            </section>
+        
+            <section >
+                <p>edit backend/src/server.ts</p>
+<ul>
+<li>POST /cats</li>
+</ul>
+<pre><code>server.post('/cats', async (request, reply) =&gt; {
+  const catRepo = CatRepoImpl.of()
+  try {
+    const catBody = request.body as ICat
+    const cat = await catRepo.addCat(catBody)
+    return reply.status(201).send({ cat })
+  } catch (error) {
+    return reply.status(500).send({ msg: 'Internal Server Error' })
+  }
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Send POST request by API Client</p>
+<p><img src="res/2021-08-17-05-06-19.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <p>Get /cats again</p>
+<p><img src="res/2021-08-17-05-09-43.png" alt=""></p>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Rebuild automatically when the code is changed</p>
+
+            </section>
+        
+            <section >
+                <ul>
+<li>install concurrently and nodemon</li>
+</ul>
+<pre><code>npm i -D concurrently nodemon
+</code></pre>
+<ul>
+<li>add the script in package.json</li>
+</ul>
+<pre><code class="language-planttext">&quot;dev&quot;: &quot;concurrently \&quot;tsc -w \&quot; \&quot;nodemon out/index.js\&quot;&quot;
+</code></pre>
+<ul>
+<li>run the script</li>
+</ul>
+<pre><code>npm run dev
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>prettier</p>
+
+            </section>
+        
+            <section >
+                <p>install prettier</p>
+<pre><code>npm i -D prettier
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>add backend/.prettierrc</p>
+<pre><code class="language-planttext">{
+  &quot;semi&quot;: false,
+  &quot;singleQuote&quot;: true,
+  &quot;printWidth&quot;: 120,
+  &quot;trailingComma&quot;: &quot;none&quot;,
+  &quot;arrowParens&quot;: &quot;always&quot;
+}
+</code></pre>
+<p>ref: <a href="https://prettier.io/docs/en/options.html">https://prettier.io/docs/en/options.html</a></p>
+
+            </section>
+        
+            <section >
+                <ul>
+<li>add the script in package.json</li>
+</ul>
+<pre><code class="language-planttext">&quot;fix-prettier&quot;: &quot;prettier --write \&quot;./{src,test,examples,scripts}/**/*.ts\&quot;&quot;
+</code></pre>
+<ul>
+<li>format code by prettier</li>
+</ul>
+<pre><code>npm run fix-prettier
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Define API routes as a plugin</p>
+<p>ref: <a href="https://www.fastify.io/docs/master/Plugins/#create-a-plugin">https://www.fastify.io/docs/master/Plugins/#create-a-plugin</a></p>
+
+            </section>
+        
+            <section >
+                <p>create backend/src/routes/cat.ts</p>
+<p>move API from server.ts to this file</p>
+<pre><code class="language-typescript=">import { FastifyInstance, RouteShorthandOptions, FastifyReply } from 'fastify'
+import { ICat } from '../types/cat'
+import { CatRepoImpl } from './../repo/cat-repo'
+
+const CatRouter = (server: FastifyInstance, opts: RouteShorthandOptions, done: (error?: Error) =&gt; void) =&gt; {
+
+  server.get('/cats', async (request, reply) =&gt; {
+    const catRepo = CatRepoImpl.of()
+    try {
+      const cats = await catRepo.getCats()
+      return reply.status(200).send({ cats })
+    } catch (error) {
+      return reply.status(500).send({ msg: 'Internal Server Error' })
+    }
+  })
+
+  server.post('/cats', async (request, reply) =&gt; {
+    const catRepo = CatRepoImpl.of()
+    try {
+      const catBody = request.body as ICat
+      const cat = await catRepo.addCat(catBody)
+      return reply.status(201).send({ cat })
+    } catch (error) {
+      return reply.status(500).send({ msg: 'Internal Server Error' })
+    }
+  })
+
+  done()
+}
+
+export { CatRouter }
+
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>register CatRouter</p>
+<p>edit backend/src/server.ts</p>
+<pre><code class="language-typescript=">server.register(CatRouter, { prefix: '/v1' })
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p><img src="res/2021-08-17-05-36-46.png" alt=""></p>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+        <section >
+            
+            <p>DIY: implement update and delete API</p>
+<ul>
+<li><a href="https://www.fastify.io/docs/v1.14.x/TypeScript/">https://www.fastify.io/docs/v1.14.x/TypeScript/</a></li>
+<li><a href="https://mongoosejs.com/docs/guide.html">https://mongoosejs.com/docs/guide.html</a></li>
+</ul>
+
+            </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Define response JSON schema</p>
+
+            </section>
+        
+            <section >
+                <p>typebox</p>
+<pre><code>npm i @sinclair/typebox
+</code></pre>
+<p>ref: <a href="https://github.com/sinclairzx81/typebox">https://github.com/sinclairzx81/typebox</a></p>
+
+            </section>
+        
+            <section >
+                <p>edit backend/src/routes/cat.ts</p>
+<pre><code class="language-typescript=">// in CatRouter
+const CatsResponse = {
+  cats: Type.Array(
+    Type.Object({
+      _id: Type.String(),
+      name: Type.String(),
+      weight: Type.Number()
+    })
+  )
+}
+type CatsResponse = Static&lt;typeof CatsResponse&gt;
+opts = { ...opts, schema: { response: { 200: CatsResponse } } }
+
+// put opts as the second parameter
+server.get('/cats', opts, async (request, reply) =&gt; {
+  const catRepo = CatRepoImpl.of()
+  try {
+    const cats = await catRepo.getCats()
+    return reply.status(200).send({ cats })
+  } catch (error) {
+    return reply.status(500).send({ msg: 'Internal Server Error' })
+  }
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Get the response schema as defined</p>
+<p><img src="res/2021-08-17-06-54-06.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <p>difference schemas based on difference status code</p>
+<pre><code class="language-typescript=">const CatsResponse = {
+  cats: Type.Array(
+    Type.Object({
+      _id: Type.String(),
+      name: Type.String(),
+      weight: Type.Number()
+    })
+  )
+}
+type CatsResponse = Static&lt;typeof CatsResponse&gt;
+
+const CatResponse = {
+  cat: Type.Object({
+    _id: Type.String(),
+    name: Type.String(),
+    weight: Type.Number()
+  })
+}
+type CatResponse = Static&lt;typeof CatResponse&gt;
+
+opts = { ...opts, schema: { response: { 200: CatsResponse, 201: CatResponse } } }
+
+server.get('/cats', opts, async (request, reply) =&gt; {
+  const catRepo = CatRepoImpl.of()
+  try {
+    const cats = await catRepo.getCats()
+    return reply.status(200).send({ cats })
+  } catch (error) {
+    return reply.status(500).send({ msg: 'Internal Server Error' })
+  }
+})
+
+server.post('/cats', opts, async (request, reply) =&gt; {
+  const catRepo = CatRepoImpl.of()
+  try {
+    const catBody = request.body as ICat
+    const cat = await catRepo.addCat(catBody)
+    return reply.status(201).send({ cat })
+  } catch (error) {
+    return reply.status(500).send({ msg: 'Internal Server Error' })
+  }
+})
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>url parameter</p>
+
+            </section>
+        
+            <section >
+                <p>PUT /cats/:id</p>
+
+            </section>
+        
+            <section >
+                <pre><code class="language-typescript=">server.put('/cats/:id', async (request, reply) =&gt; {
+  const id = request.params.id
+  // ...
+})
+</code></pre>
+<p><img src="res/2021-08-17-07-27-26.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <pre><code class="language-typescript=">interface IdParams {
+    id: string
+}
+server.put&lt;{ Params: IdParams }&gt;('/cats/:id', async (request, reply) =&gt; {
+  const id = request.params.id
+  // ...
+})
+</code></pre>
+<p>ref: <a href="https://www.fastify.io/docs/v1.14.x/TypeScript/">https://www.fastify.io/docs/v1.14.x/TypeScript/</a></p>
 
             </section>
         
