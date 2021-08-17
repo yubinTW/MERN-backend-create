@@ -48,7 +48,7 @@ p {
 }
 
 .present img {
-    height: 65vh;
+    max-height: 65vh;
 }
 </style>
 
@@ -65,8 +65,10 @@ ybhsu@tsmc.com
 ### Outline
 
 - Create the backend project
-- MongoDB Support
+- MongoDB support
 - Implement the API
+- Define API routes as a plugin
+- Define response schema
 
 ---
 
@@ -399,6 +401,8 @@ Get Cats
 
 Add Cat Repo
 
+create backend/src/repo/cat-repo
+
 ```typescript=
 import { ICat } from './../types/cat'
 import Cat from './../models/cat'
@@ -659,7 +663,174 @@ DIY: implement update and delete API
 
 ---
 
-Define response JSON schema
+
+url parameter
+
+--
+
+PUT /cats/:id
+
+--
+
+```typescript=
+server.put('/cats/:id', async (request, reply) => {
+  const id = request.params.id
+  // ...
+})
+```
+
+![](res/2021-08-17-07-27-26.png)
+
+--
+
+```typescript=
+interface IdParams {
+    id: string
+}
+server.put<{ Params: IdParams }>('/cats/:id', async (request, reply) => {
+  const id = request.params.id
+  // ...
+})
+```
+
+ref: https://www.fastify.io/docs/v1.14.x/TypeScript/
+
+---
+
+Update Cat
+
+--
+
+edit backend/src/repo/cat-repo.ts
+
+```typescript=
+async updateCat(id: String, catBody: ICat): Promise<ICat | null> {
+  return Cat.findByIdAndUpdate(id, catBody, { new: true })
+}
+```
+
+ref: https://mongoosejs.com/docs/api.html#model_Model.findByIdAndUpdate
+
+--
+
+Add API endpoint
+
+PUT /cats/:id
+
+```typescript=
+server.put<{ Params: IdParams; Body: ICat }>('/cats/:id', async (request, reply) => {
+  const catRepo = CatRepoImpl.of()
+  try {
+    const catBody = request.body
+    const id = request.params.id
+    const cat = await catRepo.updateCat(id, catBody)
+    return reply.status(200).send({ cat })
+  } catch (error) {
+    return reply.status(500).send({ msg: error })
+  }
+})
+```
+
+--
+
+if id not found
+
+```typescript=
+const cat = await catRepo.updateCat(id, catBody)
+if (cat) {
+    return reply.status(200).send({ cat })
+} else {
+    return reply.status(404).send({msg: `Cat #${id} Not Found`})
+}
+```
+
+--
+
+if id is invalid
+
+```typescript=
+import { Types } from 'mongoose'
+
+const id = request.params.id
+if (!Types.ObjectId.isValid(id)) {
+    return reply.status(400).send({msg: `Invalid id`})
+}
+```
+
+--
+
+```typescript=
+server.put<{ Params: IdParams; Body: ICat }>('/cats/:id', async (request, reply) => {
+  const catRepo = CatRepoImpl.of()
+  try {
+    const catBody = request.body
+    const id = request.params.id
+    if (!Types.ObjectId.isValid(id)) {
+        return reply.status(400).send({msg: `Invalid id`})
+    }
+    const cat = await catRepo.updateCat(id, catBody)
+    if (cat) {
+        return reply.status(200).send({ cat })
+    } else {
+        return reply.status(404).send({msg: `Cat #${id} Not Found`})
+    }
+  } catch (error) {
+    return reply.status(500).send({ msg: error })
+  }
+})
+```
+
+---
+
+Delete Cat
+
+--
+
+edit backend/src/repo/cat-repo.ts
+
+```typescript=
+async deleteCat(id: string): Promise<ICat | null> {
+  return Cat.findByIdAndDelete(id)
+}
+```
+
+ref: https://mongoosejs.com/docs/api.html#model_Model.findByIdAndDelete
+
+--
+
+Add API endpoint
+
+DELETE /cats/:id
+
+```typescript=
+server.delete<{ Params: IdParams }>('/cats/:id', async (request, reply) => {
+  const catRepo = CatRepoImpl.of()
+  try {
+    const id = request.params.id
+    if (!Types.ObjectId.isValid(id)) {
+      return reply.status(400).send({ msg: `Invalid id` })
+    }
+    const cat = await catRepo.deleteCat(id)
+    if (cat) {
+      return reply.status(204).send()
+    } else {
+      return reply.status(404).send({ msg: `Cat #${id} Not Found` })
+    }
+  } catch (error) {
+    return reply.status(500).send({ msg: error })
+  }
+})
+```
+
+---
+
+DIY: Implement get one cat by id
+
+- GET /cats/:id
+
+---
+
+Define response schema
 
 --
 
@@ -758,33 +929,4 @@ server.post('/cats', opts, async (request, reply) => {
 
 ---
 
-url parameter
-
---
-
-PUT /cats/:id
-
---
-
-```typescript=
-server.put('/cats/:id', async (request, reply) => {
-  const id = request.params.id
-  // ...
-})
-```
-
-![](res/2021-08-17-07-27-26.png)
-
---
-
-```typescript=
-interface IdParams {
-    id: string
-}
-server.put<{ Params: IdParams }>('/cats/:id', async (request, reply) => {
-  const id = request.params.id
-  // ...
-})
-```
-
-ref: https://www.fastify.io/docs/v1.14.x/TypeScript/
+end
