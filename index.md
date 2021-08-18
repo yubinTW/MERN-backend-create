@@ -847,6 +847,8 @@ ref: https://github.com/sinclairzx81/typebox
 edit backend/src/routes/cat.ts
 
 ```typescript=
+import { Type, Static } from '@sinclair/typebox'
+// ...
 // in CatRouter
 const CatsResponse = {
   cats: Type.Array(

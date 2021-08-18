@@ -1226,7 +1226,9 @@ if (!Types.ObjectId.isValid(id)) {
         
             <section >
                 <p>edit backend/src/routes/cat.ts</p>
-<pre><code class="language-typescript=">// in CatRouter
+<pre><code class="language-typescript=">import { Type, Static } from '@sinclair/typebox'
+// ...
+// in CatRouter
 const CatsResponse = {
   cats: Type.Array(
     Type.Object({
