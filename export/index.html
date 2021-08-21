@@ -343,6 +343,7 @@ p {
 <li>Implement the API</li>
 <li>Define API routes as a plugin</li>
 <li>Define response schema</li>
+<li>Serve frontend code</li>
 </ul>
 
             </section>
@@ -1241,7 +1242,7 @@ const CatsResponse = {
 type CatsResponse = Static&lt;typeof CatsResponse&gt;
 opts = { ...opts, schema: { response: { 200: CatsResponse } } }
 
-// put opts as the second parameter
+// put opts at the second parameter
 server.get('/cats', opts, async (request, reply) =&gt; {
   const catRepo = CatRepoImpl.of()
   try {
@@ -1305,6 +1306,147 @@ server.post('/cats', opts, async (request, reply) =&gt; {
     return reply.status(500).send({ msg: 'Internal Server Error' })
   }
 })
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Deployment Strategy</p>
+
+            </section>
+        
+            <section >
+                <p>MERN Arch.</p>
+<ul>
+<li>Frontend
+<ul>
+<li>React</li>
+</ul>
+</li>
+<li>Backend
+<ul>
+<li>Fastify</li>
+</ul>
+</li>
+<li>Database
+<ul>
+<li>MongoDB</li>
+</ul>
+</li>
+</ul>
+<p><img src="res/2021-08-21-22-52-16.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <p>React build static files</p>
+<p><img src="res/2021-08-21-23-29-36.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <p>Who serve the static files ?</p>
+<ul>
+<li>Frontend Server ?</li>
+<li>Backend Server ?</li>
+</ul>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Frontend Server</p>
+<p><img src="res/2021-08-21-23-35-41.png" alt=""></p>
+<ul>
+<li>CORS issue</li>
+<li>User can visit website even when the backend server is down</li>
+</ul>
+
+            </section>
+        
+            <section >
+                <p>CORS</p>
+<p>ref: <a href="https://developer.mozilla.org/zh-TW/docs/Web/HTTP/CORS">https://developer.mozilla.org/zh-TW/docs/Web/HTTP/CORS</a></p>
+
+            </section>
+        
+            <section >
+                <p>Fastify-CORS</p>
+<pre><code class="language-planttext">cd backend
+npm i fastify-cors
+</code></pre>
+<p><a href="https://github.com/fastify/fastify-cors">https://github.com/fastify/fastify-cors</a></p>
+
+            </section>
+        
+            <section >
+                <p>register in backend/src/server.ts</p>
+<pre><code class="language-typescript=">import fastifyCors from 'fastify-cors'
+// ...
+server.register(fastifyCors, {})
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Backend Server</p>
+<p><img src="res/2021-08-21-23-40-07.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <p>Fastify-Static plugin</p>
+<pre><code class="language-planttext">cd backend
+npm i fastify-static
+</code></pre>
+<p><a href="https://github.com/fastify/fastify-static">https://github.com/fastify/fastify-static</a></p>
+
+            </section>
+        
+            <section >
+                <p>register in backend/src/server.ts</p>
+<pre><code class="language-typescript=">import fastifyStatic from 'fastify-static'
+// ...
+server.register(fastifyStatic, {
+  root: path.join(__dirname, '../../frontend/build'),
+  prefix: '/'
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>build frontend code</p>
+<pre><code class="language-planttext">cd frontend
+npm run build
+</code></pre>
+<p>start backend server</p>
+<pre><code class="language-planttext">cd backend
+npm run build
+npm run start
 </code></pre>
 
             </section>

@@ -69,6 +69,7 @@ ybhsu@tsmc.com
 - Implement the API
 - Define API routes as a plugin
 - Define response schema
+- Serve frontend code
 
 ---
 
@@ -862,7 +863,7 @@ const CatsResponse = {
 type CatsResponse = Static<typeof CatsResponse>
 opts = { ...opts, schema: { response: { 200: CatsResponse } } }
 
-// put opts as the second parameter
+// put opts at the second parameter
 server.get('/cats', opts, async (request, reply) => {
   const catRepo = CatRepoImpl.of()
   try {
@@ -927,6 +928,120 @@ server.post('/cats', opts, async (request, reply) => {
     return reply.status(500).send({ msg: 'Internal Server Error' })
   }
 })
+```
+
+---
+
+Deployment Strategy
+
+--
+
+MERN Arch.
+
+
+- Frontend
+  - React
+- Backend
+  - Fastify
+- Database
+  - MongoDB
+
+![](res/2021-08-21-22-52-16.png)
+
+--
+
+React build static files
+
+![](res/2021-08-21-23-29-36.png)
+
+--
+
+Who serve the static files ?
+
+- Frontend Server ?
+- Backend Server ?
+
+---
+
+Frontend Server
+
+![](res/2021-08-21-23-35-41.png)
+
+- CORS issue
+- User can visit website even when the backend server is down
+
+--
+
+CORS
+
+ref: https://developer.mozilla.org/zh-TW/docs/Web/HTTP/CORS
+
+--
+
+Fastify-CORS
+
+```planttext
+cd backend
+npm i fastify-cors
+```
+
+https://github.com/fastify/fastify-cors
+
+--
+
+register in backend/src/server.ts
+
+```typescript=
+import fastifyCors from 'fastify-cors'
+// ...
+server.register(fastifyCors, {})
+```
+
+---
+
+Backend Server
+
+![](res/2021-08-21-23-40-07.png)
+
+--
+
+Fastify-Static plugin
+
+```planttext
+cd backend
+npm i fastify-static
+```
+
+https://github.com/fastify/fastify-static
+
+--
+
+register in backend/src/server.ts
+
+```typescript=
+import fastifyStatic from 'fastify-static'
+// ...
+server.register(fastifyStatic, {
+  root: path.join(__dirname, '../../frontend/build'),
+  prefix: '/'
+})
+```
+
+--
+
+build frontend code
+
+```planttext
+cd frontend
+npm run build
+```
+
+start backend server
+
+```planttext
+cd backend
+npm run build
+npm run start
 ```
 
 ---
