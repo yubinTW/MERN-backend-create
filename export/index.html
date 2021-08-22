@@ -1429,6 +1429,7 @@ npm i fastify-static
             <section >
                 <p>register in backend/src/server.ts</p>
 <pre><code class="language-typescript=">import fastifyStatic from 'fastify-static'
+import path from 'path'
 // ...
 server.register(fastifyStatic, {
   root: path.join(__dirname, '../../frontend/build'),

@@ -1020,6 +1020,7 @@ register in backend/src/server.ts
 
 ```typescript=
 import fastifyStatic from 'fastify-static'
+import path from 'path'
 // ...
 server.register(fastifyStatic, {
   root: path.join(__dirname, '../../frontend/build'),
