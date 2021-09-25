@@ -241,7 +241,7 @@ Send request by Thunder Client
 create ```.gitignore```
 
 ```plaintext=
-node_module
+node_modules
 out
 ```
 
