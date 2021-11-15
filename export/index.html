@@ -316,6 +316,7 @@ p {
     max-height: 65vh;
 }
 </style>
+
             </section>
     
 
@@ -419,7 +420,7 @@ const server: FastifyInstance&lt;Server, IncomingMessage, ServerResponse&gt; = f
 
 const startFastify: (port: number) =&gt; FastifyInstance&lt;Server, IncomingMessage, ServerResponse&gt; = (port) =&gt; {
 
-    server.listen(port, (err, _) =&gt; {
+    server.listen(port, '0.0.0.0', (err, _) =&gt; {
         if (err) {
             console.error(err)
         }
@@ -514,6 +515,7 @@ npm run start
 <li>Postman</li>
 <li>curl</li>
 <li>Thunder Client (vscode extension)</li>
+<li>REST Client (vscode extension)</li>
 </ul>
 
             </section>
@@ -527,6 +529,19 @@ npm run start
             <section >
                 <p>Send request by Thunder Client</p>
 <p><img src="res/2021-08-13-05-12-04.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <p>REST Client</p>
+<p><img src="res/2021-11-11-22-48-21.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <p>Send request by REST Client</p>
+<p>create a .http file, send request</p>
+<p><img src="res/2021-11-11-22-55-31.png" alt=""></p>
 
             </section>
         
@@ -628,7 +643,7 @@ export { establishConnection }
 
 // ...
 
-  server.listen(port, (err, _) =&gt; {
+  server.listen(port, '0.0.0.0', (err, _) =&gt; {
       if (err) {
           console.error(err)
       }
@@ -701,6 +716,12 @@ export default model&lt;ICat&gt;('Cat', catSchema)
 
             </section>
         
+            <section >
+                <p><a href="https://mongoosejs.com/docs/guide.html">https://mongoosejs.com/docs/guide.html</a>
+<a href="https://mongoosejs.com/docs/schematypes.html">https://mongoosejs.com/docs/schematypes.html</a></p>
+
+            </section>
+        
 
     </section>
     
@@ -716,7 +737,7 @@ export default model&lt;ICat&gt;('Cat', catSchema)
         
             <section >
                 <p>Add Cat Repo</p>
-<p>create backend/src/repo/cat-repo</p>
+<p>create backend/src/repo/cat-repo.ts</p>
 <pre><code class="language-typescript=">import { ICat } from './../types/cat'
 import Cat from './../models/cat'
 
@@ -752,13 +773,15 @@ export { CatRepoImpl }
 <ul>
 <li>GET /cats</li>
 </ul>
-<pre><code class="language-typescript=">server.get('/cats', async (request, reply) =&gt; {
+<pre><code class="language-typescript=">import { CatRepoImpl } from './repo/cat-trpo'
+// ...
+server.get('/cats', async (request, reply) =&gt; {
   const catRepo = CatRepoImpl.of()
   try {
     const cats = await catRepo.getCats()
     return reply.status(200).send({ cats })
   } catch (error) {
-    return reply.status(500).send({ msg: 'Internal Server Error' })
+    return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
   }
 })
 </code></pre>
@@ -767,9 +790,17 @@ export { CatRepoImpl }
         
             <section >
                 <ul>
-<li>send GET request by API Client</li>
+<li>send GET request (by Thunder Client)</li>
 </ul>
 <p><img src="res/2021-08-17-04-53-04.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <ul>
+<li>send GET request (by REST Client)</li>
+</ul>
+<p><img src="res/2021-11-16-01-11-06.png" alt=""></p>
 
             </section>
         
@@ -828,14 +859,16 @@ export { CatRepoImpl }
 <ul>
 <li>POST /cats</li>
 </ul>
-<pre><code>server.post('/cats', async (request, reply) =&gt; {
+<pre><code class="language-typescript=">import { ICat } from './types/cat'
+// ...
+server.post('/cats', async (request, reply) =&gt; {
   const catRepo = CatRepoImpl.of()
   try {
     const catBody = request.body as ICat
     const cat = await catRepo.addCat(catBody)
     return reply.status(201).send({ cat })
   } catch (error) {
-    return reply.status(500).send({ msg: 'Internal Server Error' })
+    return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
   }
 })
 </code></pre>
@@ -843,7 +876,7 @@ export { CatRepoImpl }
             </section>
         
             <section >
-                <p>Send POST request by API Client</p>
+                <p>Send POST request (by Thunder Client)</p>
 <p><img src="res/2021-08-17-05-06-19.png" alt=""></p>
 
             </section>
@@ -851,6 +884,53 @@ export { CatRepoImpl }
             <section >
                 <p>Get /cats again</p>
 <p><img src="res/2021-08-17-05-09-43.png" alt=""></p>
+
+            </section>
+        
+            <section >
+                <p>Send POST request (by REST Client)</p>
+<p><img src="res/2021-11-16-01-21-24.png" alt=""></p>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+        <section >
+            
+            <p>Get /cats again</p>
+<p><img src="res/2021-11-16-01-22-32.png" alt=""></p>
+
+            </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <p>Add id and remove __v for the mongoose schema</p>
+
+            </section>
+        
+            <section >
+                <p>edit backend/src/models/cat.ts</p>
+<pre><code class="language-typescript=">catSchema.set('toJSON', {
+    virtuals: true,
+    versionKey: false,
+})
+</code></pre>
+<p><a href="https://mongoosejs.com/docs/tutorials/virtuals.html#virtuals-in-json">https://mongoosejs.com/docs/tutorials/virtuals.html#virtuals-in-json</a></p>
+
+            </section>
+        
+            <section >
+                <p>Get /cats again</p>
+<p><img src="res/2021-11-16-01-36-47.png" alt=""></p>
 
             </section>
         
@@ -953,32 +1033,33 @@ export { CatRepoImpl }
 <p>move API from server.ts to this file</p>
 <pre><code class="language-typescript=">import { FastifyInstance, RouteShorthandOptions, FastifyReply } from 'fastify'
 import { ICat } from '../types/cat'
-import { CatRepoImpl } from './../repo/cat-repo'
+import { CatRepoImpl } from '../repo/cat-repo'
 
 const CatRouter = (server: FastifyInstance, opts: RouteShorthandOptions, done: (error?: Error) =&gt; void) =&gt; {
 
-  server.get('/cats', async (request, reply) =&gt; {
-    const catRepo = CatRepoImpl.of()
-    try {
-      const cats = await catRepo.getCats()
-      return reply.status(200).send({ cats })
-    } catch (error) {
-      return reply.status(500).send({ msg: 'Internal Server Error' })
-    }
-  })
+    server.get('/cats', async (request, reply) =&gt; {
+        const catRepo = CatRepoImpl.of()
+        try {
+            const cats = await catRepo.getCats()
+            return reply.status(200).send({ cats })
+        } catch (error) {
+            return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
+        }
+    })
 
-  server.post('/cats', async (request, reply) =&gt; {
-    const catRepo = CatRepoImpl.of()
-    try {
-      const catBody = request.body as ICat
-      const cat = await catRepo.addCat(catBody)
-      return reply.status(201).send({ cat })
-    } catch (error) {
-      return reply.status(500).send({ msg: 'Internal Server Error' })
-    }
-  })
+    server.post&lt;{ Body: ICat }&gt;('/cats', async (request, reply) =&gt; {
+        const catRepo = CatRepoImpl.of()
+        try {
+            const catBody = request.body
+            const cat = await catRepo.addCat(catBody)
+            return reply.status(201).send({ cat })
+        } catch (error) {
+            return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
+        }
+    })
 
-  done()
+
+    done()
 }
 
 export { CatRouter }
@@ -1232,7 +1313,7 @@ if (!Types.ObjectId.isValid(id)) {
 const CatsResponse = {
   cats: Type.Array(
     Type.Object({
-      _id: Type.String(),
+      id: Type.String(),
       name: Type.String(),
       weight: Type.Number()
     })
@@ -1257,7 +1338,7 @@ server.get('/cats', opts, async (request, reply) =&gt; {
         
             <section >
                 <p>Get the response schema as defined</p>
-<p><img src="res/2021-08-17-06-54-06.png" alt=""></p>
+<p><img src="res/2021-11-16-01-58-23.png" alt=""></p>
 
             </section>
         
@@ -1266,7 +1347,7 @@ server.get('/cats', opts, async (request, reply) =&gt; {
 <pre><code class="language-typescript=">const CatsResponse = {
   cats: Type.Array(
     Type.Object({
-      _id: Type.String(),
+      id: Type.String(),
       name: Type.String(),
       weight: Type.Number()
     })
@@ -1276,7 +1357,7 @@ type CatsResponse = Static&lt;typeof CatsResponse&gt;
 
 const CatResponse = {
   cat: Type.Object({
-    _id: Type.String(),
+    id: Type.String(),
     name: Type.String(),
     weight: Type.Number()
   })
@@ -1291,7 +1372,7 @@ server.get('/cats', opts, async (request, reply) =&gt; {
     const cats = await catRepo.getCats()
     return reply.status(200).send({ cats })
   } catch (error) {
-    return reply.status(500).send({ msg: 'Internal Server Error' })
+    return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
   }
 })
 
@@ -1302,7 +1383,7 @@ server.post('/cats', opts, async (request, reply) =&gt; {
     const cat = await catRepo.addCat(catBody)
     return reply.status(201).send({ cat })
   } catch (error) {
-    return reply.status(500).send({ msg: 'Internal Server Error' })
+    return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
   }
 })
 </code></pre>
