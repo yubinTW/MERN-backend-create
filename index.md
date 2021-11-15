@@ -563,7 +563,7 @@ Send POST request (by REST Client)
 
 ![](res/2021-11-16-01-21-24.png)
 
----
+--
 
 Get /cats again
 
