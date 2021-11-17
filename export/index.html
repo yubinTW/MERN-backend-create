@@ -316,7 +316,6 @@ p {
     max-height: 65vh;
 }
 </style>
-
             </section>
     
 
@@ -713,11 +712,8 @@ const catSchema: Schema = new Schema(
 
 export default model&lt;ICat&gt;('Cat', catSchema)
 </code></pre>
-
-            </section>
-        
-            <section >
-                <p><a href="https://mongoosejs.com/docs/guide.html">https://mongoosejs.com/docs/guide.html</a>
+<p>–</p>
+<p><a href="https://mongoosejs.com/docs/guide.html">https://mongoosejs.com/docs/guide.html</a>
 <a href="https://mongoosejs.com/docs/schematypes.html">https://mongoosejs.com/docs/schematypes.html</a></p>
 
             </section>
@@ -773,7 +769,7 @@ export { CatRepoImpl }
 <ul>
 <li>GET /cats</li>
 </ul>
-<pre><code class="language-typescript=">import { CatRepoImpl } from './repo/cat-trpo'
+<pre><code class="language-typescript=">import { CatRepoImpl } from './repo/cat-repo'
 // ...
 server.get('/cats', async (request, reply) =&gt; {
   const catRepo = CatRepoImpl.of()

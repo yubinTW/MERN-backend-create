@@ -458,7 +458,7 @@ edit backend/src/server.ts
 - GET /cats
 
 ```typescript=
-import { CatRepoImpl } from './repo/cat-trpo'
+import { CatRepoImpl } from './repo/cat-repo'
 // ...
 server.get('/cats', async (request, reply) => {
   const catRepo = CatRepoImpl.of()
