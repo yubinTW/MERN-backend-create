@@ -438,6 +438,7 @@ const catSchema: Schema = new Schema(
 
 export default model<ICat>('Cat', catSchema)
 ```
+
 --
 
 https://mongoosejs.com/docs/guide.html
