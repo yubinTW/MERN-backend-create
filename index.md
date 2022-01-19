@@ -52,6 +52,20 @@ p {
 }
 </style>
 
+<script>
+
+    window.onload = () => setTimeout(setLineNumber, 10)
+    
+    const setLineNumber = () => {
+        const codeBlocks = document.querySelectorAll('pre code[class*="="]')
+        codeBlocks.forEach(code => {
+            const addLineSpan = code.innerHTML.trim().replaceAll('\n','</span><span class="line">')
+            code.innerHTML = `<span class="line">${addLineSpan}</span>`    
+        })
+    }
+    
+</script>
+
 ---
 
 Yubin, Hsu
@@ -122,8 +136,6 @@ create backend/.env
 
 ```plaintext
 FASTIFY_PORT=8888
-FASTIFY_ENABLE_LOGGING=true
-ENV=dev
 ```
 
 --
@@ -131,22 +143,24 @@ ENV=dev
 create backend/src/server.ts
 
 ```typescript=
-import fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import { Server, IncomingMessage, ServerResponse } from 'http'
+import fastify, { FastifyInstance } from "fastify"
 
-const server: FastifyInstance<Server, IncomingMessage, ServerResponse> = fastify({
-    logger: { prettyPrint: true }
+const server: FastifyInstance = fastify({
+    logger: {
+        prettyPrint: true
+    }
 })
 
-const startFastify: (port: number) => FastifyInstance<Server, IncomingMessage, ServerResponse> = (port) => {
+const startFastify: (port: number) => FastifyInstance = (port) => {
+    const listenAddress = '0.0.0.0'
 
-    server.listen(port, '0.0.0.0', (err, _) => {
-        if (err) {
-            console.error(err)
+    server.listen(port, listenAddress, (error, _) => {
+        if (error) {
+            console.error(error)
         }
     })
 
-    server.get('/ping', async (request: FastifyRequest, reply: FastifyReply) => {
+    server.get('/ping', async (request, reply) => {
         return reply.status(200).send({ msg: 'pong' })
     })
 
@@ -175,7 +189,7 @@ export { server }
 
 --
 
-#### build and run
+build and run
 
 - build with tsc
 
@@ -259,6 +273,7 @@ create ```.gitignore```
 ```plaintext=
 node_modules
 out
+.env
 ```
 
 --
@@ -298,12 +313,32 @@ npm i -D @types/mongoose
 
 --
 
+MongoDB Connection String
+
+```
+mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]
+```
+
+https://docs.mongodb.com/manual/reference/connection-string/
+
+--
+
+Connection String Example
+
+```
+mongodb://mongodb0.example.com:27017
+```
+
+```
+mongodb://myDBReader:D1fficultP%40ssw0rd@mongodb0.example.com:27017/?authSource=admin
+```
+
+--
+
 Add env variables in backend/.env
 
 ```
-MONGO_HOST=localhost
-MONGO_PORT=27017
-MONGO_DATABASE=myMERN
+MONGO_CONNECTION_STRING=mongodb://localhost:27017/myMERN
 ```
 
 --
@@ -313,20 +348,15 @@ Create backend/src/plugins/mongoose.ts
 ```typescript=
 import mongoose from 'mongoose'
 
-const host = process.env.MONGO_HOST || 'localhost'
-const port = process.env.MONGO_PORT || 27017
-const database = process.env.MONGO_DATABASE || 'fastify'
-
 const establishConnection = () => {
-  if (!process.env.JEST_WORKER_ID && mongoose.connection.readyState === 0) {
-    mongoose.connect(
-      `mongodb://${host}:${port}/${database}`,
-      (err) => {
-        if (!err) console.log('MongoDB connection successful.')
-        else console.log('Error in DB connection : ' + JSON.stringify(err, undefined, 2))
-      }
-    )
-  }
+    const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myProject'
+    mongoose.connect(connectionString, error => {
+        if (error) {
+            console.log(`Error in DB connection: ${error}`)
+        } else {
+            console.log(`MongoDB connection successful`)
+        }
+    })
 }
 
 export { establishConnection }
@@ -341,12 +371,12 @@ import { establishConnection } from './plugins/mongoose'
 
 // ...
 
-  server.listen(port, '0.0.0.0', (err, _) => {
-      if (err) {
-          console.error(err)
-      }
-      establishConnection()
-  })
+    server.listen(port, listenAddress, (error, _) => {
+        if (error) {
+            console.error(error)
+        }
+        establishConnection()
+    })
 
 // ...
 ```
@@ -650,7 +680,7 @@ ref: https://prettier.io/docs/en/options.html
 - add the script in package.json
 
 ```planttext
-"fix-prettier": "prettier --write \"./{src,test,examples,scripts}/**/*.ts\""
+"fix-prettier": "prettier --write \"./{src,test}/**/*.ts\""
 ```
 
 - format code by prettier
@@ -998,7 +1028,11 @@ server.post('/cats', opts, async (request, reply) => {
 
 ---
 
-Deployment Strategy
+### Jest
+
+---
+
+### Deployment Strategy
 
 --
 
