@@ -146,6 +146,7 @@ p {
 <li>Implement the API</li>
 <li>Define API routes as a plugin</li>
 <li>Define response schema</li>
+<li>Jest</li>
 <li>Serve frontend code</li>
 </ul>
 
@@ -751,7 +752,7 @@ server.post('/cats', async (request, reply) =&gt; {
     
     <section>
         <section >
-            <p>Rebuild automatically when the code is changed</p>
+            <h4>Rebuild automatically when the code is changed</h4>
 
             </section>
         
@@ -759,7 +760,7 @@ server.post('/cats', async (request, reply) =&gt; {
                 <ul>
 <li>install concurrently and nodemon</li>
 </ul>
-<pre><code>npm i -D concurrently nodemon
+<pre><code class="language-planetext">npm i -D concurrently nodemon
 </code></pre>
 <ul>
 <li>add the script in package.json</li>
@@ -783,7 +784,7 @@ server.post('/cats', async (request, reply) =&gt; {
     
     <section>
         <section >
-            <p>prettier</p>
+            <h3>prettier</h3>
 
             </section>
         
@@ -831,7 +832,7 @@ server.post('/cats', async (request, reply) =&gt; {
     
     <section>
         <section >
-            <p>Define API routes as a plugin</p>
+            <h4>Define API routes as a plugin</h4>
 <p>ref: <a href="https://www.fastify.io/docs/master/Plugins/#create-a-plugin">https://www.fastify.io/docs/master/Plugins/#create-a-plugin</a></p>
 
             </section>
@@ -877,9 +878,9 @@ export { CatRouter }
             </section>
         
             <section >
-                <p>register CatRouter</p>
+                <h4>register CatRouter</h4>
 <p>edit backend/src/server.ts</p>
-<pre><code class="language-typescript=">server.register(CatRouter, { prefix: '/v1' })
+<pre><code class="language-typescript">server.register(CatRouter, { prefix: '/v1' })
 </code></pre>
 
             </section>
@@ -912,7 +913,7 @@ export { CatRouter }
     
     <section>
         <section >
-            <p>url parameter</p>
+            <h3>url parameter</h3>
 
             </section>
         
@@ -1101,12 +1102,12 @@ if (!Types.ObjectId.isValid(id)) {
     
     <section>
         <section >
-            <p>Define response schema</p>
+            <h3>Define response schema</h3>
 
             </section>
         
             <section >
-                <p>typebox</p>
+                <h4>typebox</h4>
 <pre><code>npm i @sinclair/typebox
 </code></pre>
 <p>ref: <a href="https://github.com/sinclairzx81/typebox">https://github.com/sinclairzx81/typebox</a></p>
@@ -1205,11 +1206,379 @@ server.post('/cats', opts, async (request, reply) =&gt; {
 
 
     
+    <section>
         <section >
-            
             <h3>Jest</h3>
 
             </section>
+        
+            <section >
+                <p>Jest</p>
+<ul>
+<li>JavaScript testing framework</li>
+<li>Open Source lead by Facebook</li>
+<li><a href="https://github.com/facebook/jest">https://github.com/facebook/jest</a></li>
+<li><a href="https://jestjs.io/">https://jestjs.io/</a></li>
+</ul>
+
+            </section>
+        
+            <section >
+                <p>Setup jest</p>
+<pre><code>npm i -D jest ts-jest @types/jest
+</code></pre>
+<ul>
+<li>jest - <strong>JavaScript testing framework</strong></li>
+<li>ts-jest - <strong>TypeScript preprocessor for jest</strong></li>
+<li>@types/jest - <strong>type definition for jest</strong></li>
+</ul>
+
+            </section>
+        
+            <section >
+                <p>Jest config</p>
+<p><a href="https://jestjs.io/docs/configuration">https://jestjs.io/docs/configuration</a></p>
+<p>create <code>backend/jest.config.js</code></p>
+<pre><code class="language-javascript">module.exports = {
+  preset: &quot;ts-jest&quot;,
+  transform: {
+    &quot;^.+\\.(t|j)sx?$&quot;: &quot;ts-jest&quot;,
+  },
+  testEnvironment: &quot;node&quot;,
+  moduleFileExtensions: [
+    &quot;ts&quot;,
+    &quot;tsx&quot;,
+    &quot;js&quot;,
+    &quot;jsx&quot;,
+    &quot;json&quot;,
+    &quot;node&quot;,
+  ],
+  testTimeout: 20000,
+  testPathIgnorePatterns: [
+    &quot;/node_modules/&quot;,
+    &quot;/out/&quot;
+  ]
+}
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>npm scripts</p>
+<p><a href="https://jestjs.io/docs/cli">https://jestjs.io/docs/cli</a></p>
+<p><code>backend/package.json</code></p>
+<pre><code>&quot;scripts&quot;: {
+  &quot;test&quot;: &quot;jest --verbose --coverage --runInBand&quot;,
+  &quot;build&quot;: &quot;tsc&quot;,
+  &quot;start&quot;: &quot;node out/index.js&quot;
+}
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <h3>Create test case</h3>
+
+            </section>
+        
+            <section >
+                <p>Create <code>src/tests/server.spec.ts</code></p>
+<pre><code class="language-typescript=">import { FastifyInstance } from 'fastify'
+import { startFastify } from '../server'
+
+describe('Server test', () =&gt; {
+    let server: FastifyInstance
+
+    beforeAll(async () =&gt; {
+        server = startFastify(8888)
+        await server.ready()
+    })
+    
+    afterAll(async () =&gt; {
+        try {
+            await server.close()
+            console.log('Closing Fastify server is done!')
+        } catch (e) {
+            console.log(`Failed to close a Fastify server, reason: ${e}`)
+        }
+    })
+
+    it('should successfully get a pong string', async () =&gt; {
+        const response = await server.inject({ method: 'GET', url: '/ping' })
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toStrictEqual(JSON.stringify({ msg: 'pong' }))
+    })
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Not connect to dev database when runnning test case</p>
+<p>update <code>backend/plugins/mongoose.ts</code></p>
+<pre><code class="language-typescript=">import mongoose from 'mongoose'
+
+const establishConnection = () =&gt; {
+    // jest set the env var - JEST_WORKER_ID
+    if (!process.env.JEST_WORKER_ID &amp;&amp; mongoose.connection.readyState === 0) {
+        const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myProject'
+        mongoose.connect(connectionString, error =&gt; {
+            if (error) {
+                console.log(`Error in DB connection: ${error}`)
+            } else {
+                console.log(`MongoDB connection successful`)
+            }
+        })
+    }
+}
+
+export { establishConnection }
+</code></pre>
+
+            </section>
+        
+            <section >
+                <h4>Run test</h4>
+<pre><code>npm run test
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <h4>describe &amp; it</h4>
+<pre><code class="language-typescript">describe('Server test', () =&gt; {
+    it('should successfully get a pong string', () =&gt; {
+        // Some testing condition
+    })
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <pre><code class="language-typescript">describe('API test', () =&gt; {
+    it('should successfully get a pong string', () =&gt; {
+        // Some testing condition
+    })
+    it('test B', () =&gt; {})
+    it('test C', () =&gt; {})
+    it('test D', () =&gt; {})
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <h4>expect</h4>
+<pre><code class="language-typescript">expect(response.statusCode).toBe(200)
+expect(response.body).toStrictEqual(JSON.stringify({ msg: 'pong' }))
+</code></pre>
+<ul>
+<li>toBe() - to compare primitive values or to check referential identity of object instances</li>
+<li>toStrictEqual() - to test that objects have the same types as well as structure</li>
+</ul>
+
+            </section>
+        
+            <section >
+                <p><a href="https://jestjs.io/docs/expect">https://jestjs.io/docs/expect</a></p>
+<pre><code class="language-typescript">expect(1 + 2).toBeLessThan(4)
+expect(1 + 2).toBeLessThanOrEqual(3)
+expect(['A', 'B', 'C']).toContain('B')  
+expect(1 + 2).not.toBe(4)
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Synchronous</p>
+<pre><code class="language-typescript">describe('Math test', () =&gt; {
+    it('1 + 2 should be 3', () =&gt; {
+        const a = 1
+        const b = 2
+        expect(a + b).toBe(3)
+    })
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>Asynchronous</p>
+<pre><code class="language-typescript">// pong.ts
+async getPong(): Promise&lt;string&gt; {
+    return new Promise((resolve) =&gt; {
+        resolve('pong')
+    })
+}
+
+// pong.spec.ts
+describe('asynchronous test', () =&gt; {
+    it('get pong', async () =&gt; {
+        const result = await pong.getPong()
+        expect(result).toBe('pong')
+    })
+    it('still get pong', async () =&gt; {
+        await expect(pong.getPong()).resolves.toBe('pong')
+    })
+})
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <h3>Testing database</h3>
+
+            </section>
+        
+            <section >
+                <p>Install mongodb-memory-server</p>
+<pre><code class="language-planetext">npm i -D mongodb-memory-server
+</code></pre>
+<p><a href="https://github.com/nodkz/mongodb-memory-server">https://github.com/nodkz/mongodb-memory-server</a></p>
+
+            </section>
+        
+            <section >
+                <p>Create <code>src/tests/db.ts</code></p>
+<pre><code class="language-typescript=">import mongoose from 'mongoose'
+import { MongoMemoryServer } from 'mongodb-memory-server'
+
+const mongod = new MongoMemoryServer()
+
+/**
+ * Connect to mock memory db.
+ */
+export const connect = async () =&gt; {
+    await mongod.start()
+    const uri = mongod.getUri()
+    await mongoose.connect(uri)
+}
+
+/**
+ * Close db connection
+ */
+export const closeDatabase = async () =&gt; {
+    await mongoose.connection.dropDatabase()
+    await mongoose.connection.close()
+    await mongod.stop()
+}
+
+/**
+ * Delete db collections
+ */
+export const clearDatabase = async () =&gt; {
+    const collections = mongoose.connection.collections
+    for (const key in collections) {
+        const collection = collections[key]
+        await collection.deleteMany({})
+    }
+}
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <h3>API Test</h3>
+
+            </section>
+        
+            <section >
+                <p>create backend/tests/cat.spec.ts</p>
+<pre><code class="language-typescript=">import { FastifyInstance } from 'fastify'
+import { startFastify } from '../server'
+import * as dbHandler from './db'
+import { ICat } from '../types/cat'
+
+describe('Cat API test', () =&gt; {
+  let server: FastifyInstance
+  const fastifyPort = 8888
+
+  beforeAll(async () =&gt; {
+    await dbHandler.connect()
+    server = startFastify(fastifyPort)
+    await server.ready()
+  })
+
+  afterEach(async () =&gt; {
+    await dbHandler.clearDatabase()
+  })
+
+  afterAll(async () =&gt; {
+    await dbHandler.closeDatabase()
+    await server.close()
+    console.log('Closing Fastify server is done!')
+  })
+
+  it('should successfully get a empty list of cats', async () =&gt; {
+    const response = await server.inject({ method: 'GET', url: '/api/cats' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual(JSON.stringify({ cats: [] }))
+  })
+
+  it('should successfully post a cat to mongodb', async () =&gt; {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/cats',
+      payload: {
+        name: 'fat cat',
+        weight: 6.8
+      }
+    })
+
+    expect(response.statusCode).toBe(201)
+    const cat: ICat = JSON.parse(response.body)['cat']
+    expect(cat.name).toBe('fat cat')
+    expect(cat.weight).toBe(6.8)
+
+  })
+
+})
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p><a href="https://www.fastify.io/docs/latest/Guides/Testing/">https://www.fastify.io/docs/latest/Guides/Testing/</a></p>
+
+            </section>
+        
+
+    </section>
     
 
 

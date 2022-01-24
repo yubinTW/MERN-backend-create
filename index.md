@@ -83,6 +83,7 @@ ybhsu@tsmc.com
 - Implement the API
 - Define API routes as a plugin
 - Define response schema
+- Jest
 - Serve frontend code
 
 ---
@@ -626,13 +627,13 @@ Get /cats again
 
 ---
 
-Rebuild automatically when the code is changed
+#### Rebuild automatically when the code is changed
 
 --
 
 - install concurrently and nodemon
 
-```
+```planetext
 npm i -D concurrently nodemon
 ```
 
@@ -650,7 +651,7 @@ npm run dev
 
 ---
 
-prettier
+### prettier
 
 --
 
@@ -692,7 +693,7 @@ npm run fix-prettier
 
 ---
 
-Define API routes as a plugin
+#### Define API routes as a plugin
 
 ref: https://www.fastify.io/docs/master/Plugins/#create-a-plugin
 
@@ -740,11 +741,11 @@ export { CatRouter }
 
 --
 
-register CatRouter
+#### register CatRouter
 
 edit backend/src/server.ts
 
-```typescript=
+```typescript
 server.register(CatRouter, { prefix: '/v1' })
 ```
 
@@ -762,7 +763,7 @@ DIY: implement update and delete API
 ---
 
 
-url parameter
+### url parameter
 
 --
 
@@ -928,11 +929,11 @@ DIY: Implement get one cat by id
 
 ---
 
-Define response schema
+### Define response schema
 
 --
 
-typebox
+#### typebox
 
 ```
 npm i @sinclair/typebox
@@ -1030,6 +1031,352 @@ server.post('/cats', opts, async (request, reply) => {
 ---
 
 ### Jest
+
+--
+
+Jest
+
+- JavaScript testing framework
+- Open Source lead by Facebook
+- https://github.com/facebook/jest
+- https://jestjs.io/
+
+--
+
+Setup jest
+
+```
+npm i -D jest ts-jest @types/jest
+```
+
+- jest - **JavaScript testing framework**
+- ts-jest - **TypeScript preprocessor for jest**
+- @types/jest - **type definition for jest**
+
+--
+
+Jest config
+
+https://jestjs.io/docs/configuration
+
+create ```backend/jest.config.js```
+
+```javascript
+module.exports = {
+  preset: "ts-jest",
+  transform: {
+    "^.+\\.(t|j)sx?$": "ts-jest",
+  },
+  testEnvironment: "node",
+  moduleFileExtensions: [
+    "ts",
+    "tsx",
+    "js",
+    "jsx",
+    "json",
+    "node",
+  ],
+  testTimeout: 20000,
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/out/"
+  ]
+}
+```
+
+--
+
+npm scripts
+
+https://jestjs.io/docs/cli
+
+```backend/package.json```
+
+```
+"scripts": {
+  "test": "jest --verbose --coverage --runInBand",
+  "build": "tsc",
+  "start": "node out/index.js"
+}
+```
+
+---
+
+### Create test case
+
+--
+
+Create ```src/tests/server.spec.ts```
+
+```typescript=
+import { FastifyInstance } from 'fastify'
+import { startFastify } from '../server'
+
+describe('Server test', () => {
+    let server: FastifyInstance
+
+    beforeAll(async () => {
+        server = startFastify(8888)
+        await server.ready()
+    })
+    
+    afterAll(async () => {
+        try {
+            await server.close()
+            console.log('Closing Fastify server is done!')
+        } catch (e) {
+            console.log(`Failed to close a Fastify server, reason: ${e}`)
+        }
+    })
+
+    it('should successfully get a pong string', async () => {
+        const response = await server.inject({ method: 'GET', url: '/ping' })
+
+        expect(response.statusCode).toBe(200)
+        expect(response.body).toStrictEqual(JSON.stringify({ msg: 'pong' }))
+    })
+})
+```
+
+--
+
+Not connect to dev database when runnning test case
+
+update ```backend/plugins/mongoose.ts```
+
+```typescript=
+import mongoose from 'mongoose'
+
+const establishConnection = () => {
+    // jest set the env var - JEST_WORKER_ID
+    if (!process.env.JEST_WORKER_ID && mongoose.connection.readyState === 0) {
+        const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myProject'
+        mongoose.connect(connectionString, error => {
+            if (error) {
+                console.log(`Error in DB connection: ${error}`)
+            } else {
+                console.log(`MongoDB connection successful`)
+            }
+        })
+    }
+}
+
+export { establishConnection }
+```
+
+--
+
+#### Run test
+
+```
+npm run test
+```
+
+---
+
+#### describe & it
+
+```typescript
+describe('Server test', () => {
+    it('should successfully get a pong string', () => {
+        // Some testing condition
+    })
+})
+```
+
+--
+
+```typescript
+describe('API test', () => {
+    it('should successfully get a pong string', () => {
+        // Some testing condition
+    })
+    it('test B', () => {})
+    it('test C', () => {})
+    it('test D', () => {})
+})
+```
+
+--
+
+#### expect
+
+```typescript
+expect(response.statusCode).toBe(200)
+expect(response.body).toStrictEqual(JSON.stringify({ msg: 'pong' }))
+```
+
+- toBe() - to compare primitive values or to check referential identity of object instances
+- toStrictEqual() - to test that objects have the same types as well as structure
+
+--
+
+https://jestjs.io/docs/expect
+
+```typescript
+expect(1 + 2).toBeLessThan(4)
+expect(1 + 2).toBeLessThanOrEqual(3)
+expect(['A', 'B', 'C']).toContain('B')  
+expect(1 + 2).not.toBe(4)
+```
+
+--
+
+Synchronous
+
+```typescript
+describe('Math test', () => {
+    it('1 + 2 should be 3', () => {
+        const a = 1
+        const b = 2
+        expect(a + b).toBe(3)
+    })
+})
+```
+
+--
+
+Asynchronous
+
+```typescript
+// pong.ts
+async getPong(): Promise<string> {
+    return new Promise((resolve) => {
+        resolve('pong')
+    })
+}
+
+// pong.spec.ts
+describe('asynchronous test', () => {
+    it('get pong', async () => {
+        const result = await pong.getPong()
+        expect(result).toBe('pong')
+    })
+    it('still get pong', async () => {
+        await expect(pong.getPong()).resolves.toBe('pong')
+    })
+})
+```
+
+---
+
+### Testing database
+
+--
+
+
+Install mongodb-memory-server
+
+```planetext
+npm i -D mongodb-memory-server
+```
+
+https://github.com/nodkz/mongodb-memory-server
+
+--
+
+Create ```src/tests/db.ts```
+
+```typescript=
+import mongoose from 'mongoose'
+import { MongoMemoryServer } from 'mongodb-memory-server'
+
+const mongod = new MongoMemoryServer()
+
+/**
+ * Connect to mock memory db.
+ */
+export const connect = async () => {
+    await mongod.start()
+    const uri = mongod.getUri()
+    await mongoose.connect(uri)
+}
+
+/**
+ * Close db connection
+ */
+export const closeDatabase = async () => {
+    await mongoose.connection.dropDatabase()
+    await mongoose.connection.close()
+    await mongod.stop()
+}
+
+/**
+ * Delete db collections
+ */
+export const clearDatabase = async () => {
+    const collections = mongoose.connection.collections
+    for (const key in collections) {
+        const collection = collections[key]
+        await collection.deleteMany({})
+    }
+}
+```
+
+---
+
+### API Test
+
+--
+
+create backend/tests/cat.spec.ts
+
+```typescript=
+import { FastifyInstance } from 'fastify'
+import { startFastify } from '../server'
+import * as dbHandler from './db'
+import { ICat } from '../types/cat'
+
+describe('Cat API test', () => {
+  let server: FastifyInstance
+  const fastifyPort = 8888
+
+  beforeAll(async () => {
+    await dbHandler.connect()
+    server = startFastify(fastifyPort)
+    await server.ready()
+  })
+
+  afterEach(async () => {
+    await dbHandler.clearDatabase()
+  })
+
+  afterAll(async () => {
+    await dbHandler.closeDatabase()
+    await server.close()
+    console.log('Closing Fastify server is done!')
+  })
+
+  it('should successfully get a empty list of cats', async () => {
+    const response = await server.inject({ method: 'GET', url: '/api/cats' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual(JSON.stringify({ cats: [] }))
+  })
+
+  it('should successfully post a cat to mongodb', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/cats',
+      payload: {
+        name: 'fat cat',
+        weight: 6.8
+      }
+    })
+
+    expect(response.statusCode).toBe(201)
+    const cat: ICat = JSON.parse(response.body)['cat']
+    expect(cat.name).toBe('fat cat')
+    expect(cat.weight).toBe(6.8)
+
+  })
+
+})
+```
+
+--
+
+https://www.fastify.io/docs/latest/Guides/Testing/
 
 ---
 
