@@ -949,7 +949,7 @@ edit backend/src/routes/cat.ts
 import { Type, Static } from '@sinclair/typebox'
 // ...
 // in CatRouter
-const CatsResponse = {
+const CatsResponse = Type.Object({
   cats: Type.Array(
     Type.Object({
       id: Type.String(),
@@ -957,7 +957,7 @@ const CatsResponse = {
       weight: Type.Number()
     })
   )
-}
+})
 type CatsResponse = Static<typeof CatsResponse>
 opts = { ...opts, schema: { response: { 200: CatsResponse } } }
 
