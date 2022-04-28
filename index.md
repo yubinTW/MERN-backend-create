@@ -309,7 +309,6 @@ Install mongoose
 
 ```
 npm i mongoose
-npm i -D @types/mongoose
 ```
 
 --
