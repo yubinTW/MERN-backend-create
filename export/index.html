@@ -1454,6 +1454,7 @@ describe('asynchronous test', () =&gt; {
     <section>
         <section >
             <h3>Testing database</h3>
+<p>mongodb-memory-server</p>
 
             </section>
         
@@ -1504,16 +1505,9 @@ export const clearDatabase = async () =&gt; {
 
             </section>
         
-
-    </section>
-    
-
-
-
-    
-    <section>
-        <section >
-            <h3>API Test</h3>
+            <section >
+                <h3>API Test</h3>
+<p>(using mongodb-memory-server)</p>
 
             </section>
         
@@ -1530,6 +1524,89 @@ describe('Cat API test', () =&gt; {
 
   beforeAll(async () =&gt; {
     await dbHandler.connect()
+    server = startFastify(fastifyPort)
+    await server.ready()
+  })
+
+  afterEach(async () =&gt; {
+    await dbHandler.clearDatabase()
+  })
+
+  afterAll(async () =&gt; {
+    await dbHandler.closeDatabase()
+    await server.close()
+    console.log('Closing Fastify server is done!')
+  })
+
+  it('should successfully get a empty list of cats', async () =&gt; {
+    const response = await server.inject({ method: 'GET', url: '/api/cats' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual(JSON.stringify({ cats: [] }))
+  })
+
+  it('should successfully post a cat to mongodb', async () =&gt; {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/cats',
+      payload: {
+        name: 'fat cat',
+        weight: 6.8
+      }
+    })
+
+    expect(response.statusCode).toBe(201)
+    const cat: ICat = JSON.parse(response.body)['cat']
+    expect(cat.name).toBe('fat cat')
+    expect(cat.weight).toBe(6.8)
+
+  })
+
+})
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <h3>Testing database</h3>
+<p>Testcontainers-mongoose</p>
+
+            </section>
+        
+            <section >
+                <p><a href="https://github.com/yubinTW/testcontainers-mongoose">https://github.com/yubinTW/testcontainers-mongoose</a></p>
+<pre><code>npm i -D testcontainers-mongoose
+</code></pre>
+
+            </section>
+        
+            <section >
+                <h3>API Test</h3>
+<p>(using testcontainers-mongoose)</p>
+
+            </section>
+        
+            <section >
+                <p>create backend/tests/cat.spec.ts</p>
+<pre><code class="language-typescript=">import { FastifyInstance } from 'fastify'
+import { startFastify } from '../server'
+import * as dbHandler from 'testcontainers-mongoose'
+import { ICat } from '../types/cat'
+
+describe('Cat API test', () =&gt; {
+  let server: FastifyInstance
+  const fastifyPort = 8888
+
+  beforeAll(async () =&gt; {
+    await dbHandler.connect('harbor.yourcompany.com/mongo:4.4.4')
     server = startFastify(fastifyPort)
     await server.ready()
   })

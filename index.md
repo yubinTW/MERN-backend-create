@@ -1262,6 +1262,8 @@ describe('asynchronous test', () => {
 
 ### Testing database
 
+mongodb-memory-server
+
 --
 
 
@@ -1313,9 +1315,12 @@ export const clearDatabase = async () => {
 }
 ```
 
----
+--
+
 
 ### API Test
+
+(using mongodb-memory-server)
 
 --
 
@@ -1333,6 +1338,84 @@ describe('Cat API test', () => {
 
   beforeAll(async () => {
     await dbHandler.connect()
+    server = startFastify(fastifyPort)
+    await server.ready()
+  })
+
+  afterEach(async () => {
+    await dbHandler.clearDatabase()
+  })
+
+  afterAll(async () => {
+    await dbHandler.closeDatabase()
+    await server.close()
+    console.log('Closing Fastify server is done!')
+  })
+
+  it('should successfully get a empty list of cats', async () => {
+    const response = await server.inject({ method: 'GET', url: '/api/cats' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toStrictEqual(JSON.stringify({ cats: [] }))
+  })
+
+  it('should successfully post a cat to mongodb', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/cats',
+      payload: {
+        name: 'fat cat',
+        weight: 6.8
+      }
+    })
+
+    expect(response.statusCode).toBe(201)
+    const cat: ICat = JSON.parse(response.body)['cat']
+    expect(cat.name).toBe('fat cat')
+    expect(cat.weight).toBe(6.8)
+
+  })
+
+})
+```
+
+
+---
+
+### Testing database
+
+Testcontainers-mongoose
+
+--
+
+https://github.com/yubinTW/testcontainers-mongoose
+
+```
+npm i -D testcontainers-mongoose
+```
+
+--
+
+### API Test
+
+(using testcontainers-mongoose)
+
+--
+
+create backend/tests/cat.spec.ts
+
+```typescript=
+import { FastifyInstance } from 'fastify'
+import { startFastify } from '../server'
+import * as dbHandler from 'testcontainers-mongoose'
+import { ICat } from '../types/cat'
+
+describe('Cat API test', () => {
+  let server: FastifyInstance
+  const fastifyPort = 8888
+
+  beforeAll(async () => {
+    await dbHandler.connect('harbor.yourcompany.com/mongo:4.4.4')
     server = startFastify(fastifyPort)
     await server.ready()
   })
