@@ -694,7 +694,7 @@ npm run fix-prettier
 
 #### Define API routes as a plugin
 
-ref: https://www.fastify.io/docs/master/Plugins/#create-a-plugin
+ref: https://www.fastify.io/docs/latest/Reference/Plugins/#create-a-plugin
 
 --
 
