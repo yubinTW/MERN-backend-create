@@ -1535,11 +1535,11 @@ Backend Server
 
 --
 
-Fastify-Static plugin
+@fastify/static plugin
 
 ```planttext
 cd backend
-npm i fastify-static
+npm i @fastify/static
 ```
 
 https://github.com/fastify/fastify-static
@@ -1549,7 +1549,7 @@ https://github.com/fastify/fastify-static
 register in backend/src/server.ts
 
 ```typescript=
-import fastifyStatic from 'fastify-static'
+import fastifyStatic from '@fastify/static'
 import path from 'path'
 // ...
 server.register(fastifyStatic, {
