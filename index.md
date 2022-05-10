@@ -1508,11 +1508,11 @@ ref: https://developer.mozilla.org/zh-TW/docs/Web/HTTP/CORS
 
 --
 
-Fastify-CORS
+@fastify/cors
 
 ```planttext
 cd backend
-npm i fastify-cors
+npm i @fastify/cors
 ```
 
 https://github.com/fastify/fastify-cors
@@ -1522,7 +1522,7 @@ https://github.com/fastify/fastify-cors
 register in backend/src/server.ts
 
 ```typescript=
-import fastifyCors from 'fastify-cors'
+import fastifyCors from '@fastify/cors'
 // ...
 server.register(fastifyCors, {})
 ```

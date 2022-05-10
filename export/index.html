@@ -1730,9 +1730,9 @@ describe('Cat API test', () =&gt; {
             </section>
         
             <section >
-                <p>Fastify-CORS</p>
+                <p>@fastify/cors</p>
 <pre><code class="language-planttext">cd backend
-npm i fastify-cors
+npm i @fastify/cors
 </code></pre>
 <p><a href="https://github.com/fastify/fastify-cors">https://github.com/fastify/fastify-cors</a></p>
 
@@ -1740,7 +1740,7 @@ npm i fastify-cors
         
             <section >
                 <p>register in backend/src/server.ts</p>
-<pre><code class="language-typescript=">import fastifyCors from 'fastify-cors'
+<pre><code class="language-typescript=">import fastifyCors from '@fastify/cors'
 // ...
 server.register(fastifyCors, {})
 </code></pre>
