@@ -958,10 +958,11 @@ const CatsResponse = Type.Object({
   )
 })
 type CatsResponse = Static<typeof CatsResponse>
-opts = { ...opts, schema: { response: { 200: CatsResponse } } }
+
+const catsResponseOptions =  { ...opts, schema: { response: { 200: CatsResponse } } }
 
 // put opts at the second parameter
-server.get('/cats', opts, async (request, reply) => {
+server.get('/cats', catsResponseOptions, async (request, reply) => {
   const catRepo = CatRepoImpl.of()
   try {
     const cats = await catRepo.getCats()
