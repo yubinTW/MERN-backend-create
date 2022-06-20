@@ -144,28 +144,35 @@ FASTIFY_PORT=8888
 create backend/src/server.ts
 
 ```typescript=
-import fastify, { FastifyInstance } from "fastify"
+import fastify, { FastifyInstance } from 'fastify'
 
 const server: FastifyInstance = fastify({
-    logger: {
-        prettyPrint: true
-    }
+  logger: {
+    transport: {
+      target: 'pino-pretty'
+    },
+    level: 'debug'
+  }
 })
 
 const startFastify: (port: number) => FastifyInstance = (port) => {
-    const listenAddress = '0.0.0.0'
+  const listenAddress = '0.0.0.0'
+  const fastifyConfig = {
+    port: port,
+    host: listenAddress
+  }
 
-    server.listen(port, listenAddress, (error, _) => {
-        if (error) {
-            console.error(error)
-        }
-    })
+  server.listen(fastifyConfig, (error, _) => {
+    if (error) {
+      console.error(error)
+    }
+  })
 
-    server.get('/ping', async (request, reply) => {
-        return reply.status(200).send({ msg: 'pong' })
-    })
+  server.get('/ping', async (request, reply) => {
+    return reply.status(200).send({ msg: 'pong' })
+  })
 
-    return server
+  return server
 }
 
 export { startFastify }

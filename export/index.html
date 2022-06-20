@@ -213,28 +213,35 @@ npx tsc --init
         
             <section >
                 <p>create backend/src/server.ts</p>
-<pre><code class="language-typescript=">import fastify, { FastifyInstance } from &quot;fastify&quot;
+<pre><code class="language-typescript=">import fastify, { FastifyInstance } from 'fastify'
 
 const server: FastifyInstance = fastify({
-    logger: {
-        prettyPrint: true
-    }
+  logger: {
+    transport: {
+      target: 'pino-pretty'
+    },
+    level: 'debug'
+  }
 })
 
 const startFastify: (port: number) =&gt; FastifyInstance = (port) =&gt; {
-    const listenAddress = '0.0.0.0'
+  const listenAddress = '0.0.0.0'
+  const fastifyConfig = {
+    port: port,
+    host: listenAddress
+  }
 
-    server.listen(port, listenAddress, (error, _) =&gt; {
-        if (error) {
-            console.error(error)
-        }
-    })
+  server.listen(fastifyConfig, (error, _) =&gt; {
+    if (error) {
+      console.error(error)
+    }
+  })
 
-    server.get('/ping', async (request, reply) =&gt; {
-        return reply.status(200).send({ msg: 'pong' })
-    })
+  server.get('/ping', async (request, reply) =&gt; {
+    return reply.status(200).send({ msg: 'pong' })
+  })
 
-    return server
+  return server
 }
 
 export { startFastify }
