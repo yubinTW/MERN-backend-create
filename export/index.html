@@ -442,17 +442,15 @@ out
                 <p>Create backend/src/plugins/mongoose.ts</p>
 <pre><code class="language-typescript=">import mongoose from 'mongoose'
 
-const establishConnection = () =&gt; {
-    const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myProject'
-    mongoose.connect(connectionString, error =&gt; {
-        if (error) {
-            console.log(`Error in DB connection: ${error}`)
-        } else {
-            console.log(`MongoDB connection successful`)
-        }
-    })
+const establishConnection = (connectionString: string) =&gt; {
+  mongoose.connect(connectionString, (error) =&gt; {
+    if (error) {
+      console.log(`Error in DB connection: ${error}`)
+    } else {
+      console.log(`MongoDB connection successful`)
+    }
+  })
 }
-
 export { establishConnection }
 </code></pre>
 
@@ -464,12 +462,13 @@ export { establishConnection }
 
 // ...
 
-    server.listen(port, listenAddress, (error, _) =&gt; {
-        if (error) {
-            console.error(error)
-        }
-        establishConnection()
-    })
+  server.listen(fastifyConfig, (error, _) =&gt; {
+      if (error) {
+        console.error(error)
+      }
+      const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myMERN'
+      establishConnection(connectionString)
+  })
 
 // ...
 </code></pre>
@@ -820,7 +819,7 @@ server.post('/cats', async (request, reply) =&gt; {
                 <ul>
 <li>add the script in package.json</li>
 </ul>
-<pre><code class="language-planttext">&quot;fix-prettier&quot;: &quot;prettier --write \&quot;./{src,test}/**/*.ts\&quot;&quot;
+<pre><code class="language-planttext">&quot;fix-prettier&quot;: &quot;prettier --write \&quot;./src/**/*.ts\&quot;&quot;
 </code></pre>
 <ul>
 <li>format code by prettier</li>
@@ -1332,24 +1331,10 @@ describe('Server test', () =&gt; {
         
             <section >
                 <p>Not connect to dev database when runnning test case</p>
-<p>update <code>backend/plugins/mongoose.ts</code></p>
-<pre><code class="language-typescript=">import mongoose from 'mongoose'
-
-const establishConnection = () =&gt; {
-    // jest set the env var - JEST_WORKER_ID
-    if (!process.env.JEST_WORKER_ID &amp;&amp; mongoose.connection.readyState === 0) {
-        const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myProject'
-        mongoose.connect(connectionString, error =&gt; {
-            if (error) {
-                console.log(`Error in DB connection: ${error}`)
-            } else {
-                console.log(`MongoDB connection successful`)
-            }
-        })
-    }
+<p>update <code>backend/src/server.ts</code></p>
+<pre><code class="language-typescript=">if (process.env.NODE_ENV !== 'test') {
+  establishConnection(connectionString)
 }
-
-export { establishConnection }
 </code></pre>
 
             </section>

@@ -355,17 +355,15 @@ Create backend/src/plugins/mongoose.ts
 ```typescript=
 import mongoose from 'mongoose'
 
-const establishConnection = () => {
-    const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myProject'
-    mongoose.connect(connectionString, error => {
-        if (error) {
-            console.log(`Error in DB connection: ${error}`)
-        } else {
-            console.log(`MongoDB connection successful`)
-        }
-    })
+const establishConnection = (connectionString: string) => {
+  mongoose.connect(connectionString, (error) => {
+    if (error) {
+      console.log(`Error in DB connection: ${error}`)
+    } else {
+      console.log(`MongoDB connection successful`)
+    }
+  })
 }
-
 export { establishConnection }
 ```
 
@@ -378,12 +376,13 @@ import { establishConnection } from './plugins/mongoose'
 
 // ...
 
-    server.listen(port, listenAddress, (error, _) => {
-        if (error) {
-            console.error(error)
-        }
-        establishConnection()
-    })
+  server.listen(fastifyConfig, (error, _) => {
+      if (error) {
+        console.error(error)
+      }
+      const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myMERN'
+      establishConnection(connectionString)
+  })
 
 // ...
 ```
@@ -688,7 +687,7 @@ ref: https://prettier.io/docs/en/options.html
 - add the script in package.json
 
 ```planttext
-"fix-prettier": "prettier --write \"./{src,test}/**/*.ts\""
+"fix-prettier": "prettier --write \"./src/**/*.ts\""
 ```
 
 - format code by prettier
@@ -1149,26 +1148,12 @@ describe('Server test', () => {
 
 Not connect to dev database when runnning test case
 
-update ```backend/plugins/mongoose.ts```
+update ```backend/src/server.ts```
 
 ```typescript=
-import mongoose from 'mongoose'
-
-const establishConnection = () => {
-    // jest set the env var - JEST_WORKER_ID
-    if (!process.env.JEST_WORKER_ID && mongoose.connection.readyState === 0) {
-        const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myProject'
-        mongoose.connect(connectionString, error => {
-            if (error) {
-                console.log(`Error in DB connection: ${error}`)
-            } else {
-                console.log(`MongoDB connection successful`)
-            }
-        })
-    }
+if (process.env.NODE_ENV !== 'test') {
+  establishConnection(connectionString)
 }
-
-export { establishConnection }
 ```
 
 --
