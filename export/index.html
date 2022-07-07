@@ -766,12 +766,12 @@ server.post('/cats', async (request, reply) =&gt; {
                 <ul>
 <li>install concurrently and nodemon</li>
 </ul>
-<pre><code class="language-planetext">npm i -D concurrently nodemon
+<pre><code>npm i -D concurrently nodemon
 </code></pre>
 <ul>
 <li>add the script in package.json</li>
 </ul>
-<pre><code class="language-planttext">&quot;dev&quot;: &quot;concurrently \&quot;tsc -w \&quot; \&quot;nodemon out/index.js\&quot;&quot;
+<pre><code>&quot;dev&quot;: &quot;concurrently \&quot;tsc -w \&quot; \&quot;nodemon out/index.js\&quot;&quot;
 </code></pre>
 <ul>
 <li>run the script</li>
@@ -803,7 +803,7 @@ server.post('/cats', async (request, reply) =&gt; {
         
             <section >
                 <p>add backend/.prettierrc</p>
-<pre><code class="language-planttext">{
+<pre><code>{
   &quot;semi&quot;: false,
   &quot;singleQuote&quot;: true,
   &quot;printWidth&quot;: 120,
@@ -819,7 +819,7 @@ server.post('/cats', async (request, reply) =&gt; {
                 <ul>
 <li>add the script in package.json</li>
 </ul>
-<pre><code class="language-planttext">&quot;fix-prettier&quot;: &quot;prettier --write \&quot;./src/**/*.ts\&quot;&quot;
+<pre><code>&quot;fix-prettier&quot;: &quot;prettier --write \&quot;./src/**/*.ts\&quot;&quot;
 </code></pre>
 <ul>
 <li>format code by prettier</li>
@@ -1126,7 +1126,7 @@ if (!Types.ObjectId.isValid(id)) {
   properties: {
     name: { type: 'string' },
     description: { type: 'string' },
-    status: { type: 'string' }
+    status: { type: 'boolean' }
   }
 }
 const postOptions = { ...opts, schema: { body: bodySchema } }
@@ -1135,6 +1135,11 @@ server.post('/todos', postOptions, async (request, reply) =&gt; {
   // ...
 })
 </code></pre>
+
+            </section>
+        
+            <section >
+                <p><img src="res/20220708001228.png" alt=""></p>
 
             </section>
         
@@ -1491,7 +1496,7 @@ describe('asynchronous test', () =&gt; {
         
             <section >
                 <p>Install mongodb-memory-server</p>
-<pre><code class="language-planetext">npm i -D mongodb-memory-server
+<pre><code>npm i -D mongodb-memory-server
 </code></pre>
 <p><a href="https://github.com/nodkz/mongodb-memory-server">https://github.com/nodkz/mongodb-memory-server</a></p>
 
@@ -1763,7 +1768,7 @@ describe('Cat API test', () =&gt; {
         
             <section >
                 <p>@fastify/cors</p>
-<pre><code class="language-planttext">cd backend
+<pre><code>cd backend
 npm i @fastify/cors
 </code></pre>
 <p><a href="https://github.com/fastify/fastify-cors">https://github.com/fastify/fastify-cors</a></p>
@@ -1795,7 +1800,7 @@ server.register(fastifyCors, {})
         
             <section >
                 <p>@fastify/static plugin</p>
-<pre><code class="language-planttext">cd backend
+<pre><code>cd backend
 npm i @fastify/static
 </code></pre>
 <p><a href="https://github.com/fastify/fastify-static">https://github.com/fastify/fastify-static</a></p>
@@ -1817,11 +1822,11 @@ server.register(fastifyStatic, {
         
             <section >
                 <p>build frontend code</p>
-<pre><code class="language-planttext">cd frontend
+<pre><code>cd frontend
 npm run build
 </code></pre>
 <p>start backend server</p>
-<pre><code class="language-planttext">cd backend
+<pre><code>cd backend
 npm run build
 npm run start
 </code></pre>

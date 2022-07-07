@@ -638,13 +638,13 @@ Get /cats again
 
 - install concurrently and nodemon
 
-```planetext
+```
 npm i -D concurrently nodemon
 ```
 
 - add the script in package.json
 
-```planttext
+```
 "dev": "concurrently \"tsc -w \" \"nodemon out/index.js\""
 ```
 
@@ -670,7 +670,7 @@ npm i -D prettier
 
 add backend/.prettierrc
 
-```planttext
+```
 {
   "semi": false,
   "singleQuote": true,
@@ -686,7 +686,7 @@ ref: https://prettier.io/docs/en/options.html
 
 - add the script in package.json
 
-```planttext
+```
 "fix-prettier": "prettier --write \"./src/**/*.ts\""
 ```
 
@@ -953,7 +953,7 @@ const bodySchema = {
   properties: {
     name: { type: 'string' },
     description: { type: 'string' },
-    status: { type: 'string' }
+    status: { type: 'boolean' }
   }
 }
 const postOptions = { ...opts, schema: { body: bodySchema } }
@@ -962,6 +962,10 @@ server.post('/todos', postOptions, async (request, reply) => {
   // ...
 })
 ```
+
+--
+
+![](res/20220708001228.png)
 
 ---
 
@@ -1292,7 +1296,7 @@ mongodb-memory-server
 
 Install mongodb-memory-server
 
-```planetext
+```
 npm i -D mongodb-memory-server
 ```
 
@@ -1534,7 +1538,7 @@ ref: https://developer.mozilla.org/zh-TW/docs/Web/HTTP/CORS
 
 @fastify/cors
 
-```planttext
+```
 cd backend
 npm i @fastify/cors
 ```
@@ -1561,7 +1565,7 @@ Backend Server
 
 @fastify/static plugin
 
-```planttext
+```
 cd backend
 npm i @fastify/static
 ```
@@ -1586,14 +1590,14 @@ server.register(fastifyStatic, {
 
 build frontend code
 
-```planttext
+```
 cd frontend
 npm run build
 ```
 
 start backend server
 
-```planttext
+```
 cd backend
 npm run build
 npm run start
