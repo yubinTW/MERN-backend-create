@@ -934,6 +934,37 @@ DIY: Implement get one cat by id
 
 ---
 
+### Validation
+
+--
+
+#### defined request schema
+
+support: body, querystring, params, headers
+
+[Fastify Validation](https://www.fastify.io/docs/latest/Reference/Validation-and-Serialization/#validation)
+
+--
+
+```
+const bodySchema = {
+  type: 'object',
+  required: ['name', 'status'],
+  properties: {
+    name: { type: 'string' },
+    description: { type: 'string' },
+    status: { type: 'string' }
+  }
+}
+const postOptions = { ...opts, schema: { body: bodySchema } }
+
+server.post('/todos', postOptions, async (request, reply) => {
+  // ...
+})
+```
+
+---
+
 ### Define response schema
 
 --

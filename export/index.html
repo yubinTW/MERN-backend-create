@@ -1108,6 +1108,45 @@ if (!Types.ObjectId.isValid(id)) {
     
     <section>
         <section >
+            <h3>Validation</h3>
+
+            </section>
+        
+            <section >
+                <h4>defined request schema</h4>
+<p>support: body, querystring, params, headers</p>
+<p><a href="https://www.fastify.io/docs/latest/Reference/Validation-and-Serialization/#validation">Fastify Validation</a></p>
+
+            </section>
+        
+            <section >
+                <pre><code>const bodySchema = {
+  type: 'object',
+  required: ['name', 'status'],
+  properties: {
+    name: { type: 'string' },
+    description: { type: 'string' },
+    status: { type: 'string' }
+  }
+}
+const postOptions = { ...opts, schema: { body: bodySchema } }
+
+server.post('/todos', postOptions, async (request, reply) =&gt; {
+  // ...
+})
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
             <h3>Define response schema</h3>
 
             </section>
