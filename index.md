@@ -355,16 +355,9 @@ Create backend/src/plugins/mongoose.ts
 ```typescript=
 import mongoose from 'mongoose'
 
-const establishConnection = (connectionString: string) => {
-  mongoose.connect(connectionString, (error) => {
-    if (error) {
-      console.log(`Error in DB connection: ${error}`)
-    } else {
-      console.log(`MongoDB connection successful`)
-    }
-  })
+export const establishConnection = async (connectionString: string) => {
+  await mongoose.connect(connectionString)
 }
-export { establishConnection }
 ```
 
 --
@@ -403,17 +396,17 @@ https://mongoosejs.com/docs/typescript.html
 
 --
 
-Define interface
+Define Type
 
 create backend/src/types/cat.ts
 
 ```typescript=
-interface ICat {
+type Cat = {
     name: string
     weight: number
 }
 
-export { ICat }
+export { Cat }
 ```
 
 --
@@ -423,8 +416,8 @@ Add mongo schema
 create backend/src/models/cat.ts
 
 ```typescript=
-import { model, Schema } from 'mongoose'
-import { ICat } from '../types/cat'
+import { model, Schema }, mongoose from 'mongoose'
+import { Cat } from '../types/cat'
 
 const catSchema: Schema = new Schema(
     {
@@ -442,7 +435,7 @@ const catSchema: Schema = new Schema(
     }
 )
 
-export default model<ICat>('Cat', catSchema)
+export default mongoose.models.Cat || model<Cat>('Cat', catSchema)
 ```
 
 --
@@ -461,27 +454,12 @@ Add Cat Repo
 create backend/src/repo/cat-repo.ts
 
 ```typescript=
-import { ICat } from './../types/cat'
-import Cat from './../models/cat'
+import { Cat } from './../types/cat'
+import CatModel from './../models/cat'
 
-interface CatRepo {
-  getCats(): Promise<Array<ICat>>
+export const getCats: () => Promise<Array<Cat>> = () => {
+  return Cat.find()
 }
-
-class CatRepoImpl implements CatRepo {
-  private constructor() {}
-
-  static of(): CatRepoImpl {
-    return new CatRepoImpl()
-  }
-
-  async getCats(): Promise<Array<ICat>> {
-    return Cat.find()
-  }
-
-}
-
-export { CatRepoImpl }
 ```
 
 --
@@ -495,12 +473,12 @@ edit backend/src/server.ts
 - GET /cats
 
 ```typescript=
-import { CatRepoImpl } from './repo/cat-repo'
+import * as repo from './repo/cat-repo'
 // ...
 server.get('/cats', async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
+  
   try {
-    const cats = await catRepo.getCats()
+    const cats = await repo.getCats()
     return reply.status(200).send({ cats })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -529,32 +507,16 @@ Add Cat
 edit backend/src/repo/cat-repo.ts
 
 ```typescript=
-import { ICat } from './../types/cat'
-import Cat from './../models/cat'
+import { Cat } from './../types/cat'
+import CatModel from './../models/cat'
 
-interface CatRepo {
-  getCats(): Promise<Array<ICat>>
-  addCat(catBody: ICat): Promise<ICat>
+const getCats: () => Promise<Array<Cat>> = () => {
+  return Cat.find()
 }
 
-class CatRepoImpl implements CatRepo {
-  private constructor() {}
-
-  static of(): CatRepoImpl {
-    return new CatRepoImpl()
-  }
-
-  async getCats(): Promise<Array<ICat>> {
-    return Cat.find()
-  }
-
-  async addCat(catBody: ICat): Promise<ICat> {
-    return Cat.create(catBody)
-  }
-
+const addCat: (catBody: Cat) => Promise<Cat> = (catBody) => {
+  return Cat.create(catBody)
 }
-
-export { CatRepoImpl }
 ```
 
 --
@@ -568,13 +530,12 @@ edit backend/src/server.ts
 - POST /cats
 
 ```typescript=
-import { ICat } from './types/cat'
+import { Cat } from './types/cat'
 // ...
 server.post('/cats', async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
   try {
-    const catBody = request.body as ICat
-    const cat = await catRepo.addCat(catBody)
+    const catBody = request.body as Cat
+    const cat = await repo.addCat(catBody)
     return reply.status(201).send({ cat })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -710,26 +671,24 @@ move API from server.ts to this file
 
 ```typescript=
 import { FastifyInstance, RouteShorthandOptions, FastifyReply } from 'fastify'
-import { ICat } from '../types/cat'
-import { CatRepoImpl } from '../repo/cat-repo'
+import { Cat } from '../types/cat'
+import * as repo from '../repo/cat-repo'
 
 const CatRouter = (server: FastifyInstance, opts: RouteShorthandOptions, done: (error?: Error) => void) => {
 
     server.get('/cats', async (request, reply) => {
-        const catRepo = CatRepoImpl.of()
         try {
-            const cats = await catRepo.getCats()
+            const cats = await repo.getCats()
             return reply.status(200).send({ cats })
         } catch (error) {
             return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
         }
     })
 
-    server.post<{ Body: ICat }>('/cats', async (request, reply) => {
-        const catRepo = CatRepoImpl.of()
+    server.post<{ Body: Cat }>('/cats', async (request, reply) => {
         try {
             const catBody = request.body
-            const cat = await catRepo.addCat(catBody)
+            const cat = await repo.addCat(catBody)
             return reply.status(201).send({ cat })
         } catch (error) {
             return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -808,7 +767,7 @@ Update Cat
 edit backend/src/repo/cat-repo.ts
 
 ```typescript=
-async updateCat(id: String, catBody: ICat): Promise<ICat | null> {
+const updateCat: (id: String, catBody: Cat) => Promise<Cat | null> = (id, catBody) => {
   return Cat.findByIdAndUpdate(id, catBody, { new: true })
 }
 ```
@@ -822,12 +781,11 @@ Add API endpoint
 PUT /cats/:id
 
 ```typescript=
-server.put<{ Params: IdParams; Body: ICat }>('/cats/:id', async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
+server.put<{ Params: IdParams; Body: Cat }>('/cats/:id', async (request, reply) => {
   try {
     const catBody = request.body
     const id = request.params.id
-    const cat = await catRepo.updateCat(id, catBody)
+    const cat = await repo.updateCat(id, catBody)
     return reply.status(200).send({ cat })
   } catch (error) {
     return reply.status(500).send({ msg: error })
@@ -840,7 +798,7 @@ server.put<{ Params: IdParams; Body: ICat }>('/cats/:id', async (request, reply)
 if id not found
 
 ```typescript=
-const cat = await catRepo.updateCat(id, catBody)
+const cat = await repo.updateCat(id, catBody)
 if (cat) {
     return reply.status(200).send({ cat })
 } else {
@@ -864,15 +822,14 @@ if (!Types.ObjectId.isValid(id)) {
 --
 
 ```typescript=
-server.put<{ Params: IdParams; Body: ICat }>('/cats/:id', async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
+server.put<{ Params: IdParams; Body: Cat }>('/cats/:id', async (request, reply) => {
   try {
     const catBody = request.body
     const id = request.params.id
     if (!Types.ObjectId.isValid(id)) {
         return reply.status(400).send({msg: `Invalid id`})
     }
-    const cat = await catRepo.updateCat(id, catBody)
+    const cat = await repo.updateCat(id, catBody)
     if (cat) {
         return reply.status(200).send({ cat })
     } else {
@@ -893,7 +850,7 @@ Delete Cat
 edit backend/src/repo/cat-repo.ts
 
 ```typescript=
-async deleteCat(id: string): Promise<ICat | null> {
+export const deleteCat: (id: string) => Promise<Cat | null> = (id) => {
   return Cat.findByIdAndDelete(id)
 }
 ```
@@ -908,13 +865,12 @@ DELETE /cats/:id
 
 ```typescript=
 server.delete<{ Params: IdParams }>('/cats/:id', async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
   try {
     const id = request.params.id
     if (!Types.ObjectId.isValid(id)) {
       return reply.status(400).send({ msg: `Invalid id` })
     }
-    const cat = await catRepo.deleteCat(id)
+    const cat = await repo.deleteCat(id)
     if (cat) {
       return reply.status(204).send()
     } else {
@@ -949,16 +905,15 @@ support: body, querystring, params, headers
 ```
 const bodySchema = {
   type: 'object',
-  required: ['name', 'status'],
+  required: ['name'],
   properties: {
     name: { type: 'string' },
-    description: { type: 'string' },
-    status: { type: 'boolean' }
+    status: { type: 'number' }
   }
 }
-const postOptions = { ...opts, schema: { body: bodySchema } }
+const postCatsOptions = { ...opts, schema: { body: bodySchema } }
 
-server.post('/todos', postOptions, async (request, reply) => {
+server.post('/cats', postCatsOptions, async (request, reply) => {
   // ...
 })
 ```
@@ -1004,9 +959,8 @@ const catsResponseOptions =  { ...opts, schema: { response: { 200: CatsResponse 
 
 // put opts at the second parameter
 server.get('/cats', catsResponseOptions, async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
   try {
-    const cats = await catRepo.getCats()
+    const cats = await repo.getCats()
     return reply.status(200).send({ cats })
   } catch (error) {
     return reply.status(500).send({ msg: 'Internal Server Error' })
@@ -1048,9 +1002,8 @@ type CatResponse = Static<typeof CatResponse>
 opts = { ...opts, schema: { response: { 200: CatsResponse, 201: CatResponse } } }
 
 server.get('/cats', opts, async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
   try {
-    const cats = await catRepo.getCats()
+    const cats = await repo.getCats()
     return reply.status(200).send({ cats })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -1058,10 +1011,9 @@ server.get('/cats', opts, async (request, reply) => {
 })
 
 server.post('/cats', opts, async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
   try {
-    const catBody = request.body as ICat
-    const cat = await catRepo.addCat(catBody)
+    const catBody = request.body as Cat
+    const cat = await repo.addCat(catBody)
     return reply.status(201).send({ cat })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -1357,7 +1309,7 @@ create backend/tests/cat.spec.ts
 import { FastifyInstance } from 'fastify'
 import { startFastify } from '../server'
 import * as dbHandler from './db'
-import { ICat } from '../types/cat'
+import { Cat } from '../types/cat'
 
 describe('Cat API test', () => {
   let server: FastifyInstance
@@ -1397,7 +1349,7 @@ describe('Cat API test', () => {
     })
 
     expect(response.statusCode).toBe(201)
-    const cat: ICat = JSON.parse(response.body)['cat']
+    const cat: Cat = JSON.parse(response.body)['cat']
     expect(cat.name).toBe('fat cat')
     expect(cat.weight).toBe(6.8)
 
@@ -1435,7 +1387,7 @@ create backend/tests/cat.spec.ts
 import { FastifyInstance } from 'fastify'
 import { startFastify } from '../server'
 import * as dbHandler from 'testcontainers-mongoose'
-import { ICat } from '../types/cat'
+import { Cat } from '../types/cat'
 
 describe('Cat API test', () => {
   let server: FastifyInstance
@@ -1475,7 +1427,7 @@ describe('Cat API test', () => {
     })
 
     expect(response.statusCode).toBe(201)
-    const cat: ICat = JSON.parse(response.body)['cat']
+    const cat: Cat = JSON.parse(response.body)['cat']
     expect(cat.name).toBe('fat cat')
     expect(cat.weight).toBe(6.8)
 

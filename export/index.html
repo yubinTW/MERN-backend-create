@@ -2,57 +2,63 @@
 <html lang="en">
 
 <head>
-	<meta charset="utf-8">
+  <meta charset="utf-8">
 
-	<title>MERN Backend</title>
+  <title>MERN Backend</title>
 
-	<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
-	<meta name="author" content="Hakim El Hattab">
+  <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+  <meta name="author" content="Hakim El Hattab">
 
-	<meta name="apple-mobile-web-app-capable" content="yes">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-	<link rel="stylesheet" href="libs/reveal.js/4.1.3/reset.css">
-	<link rel="stylesheet" href="libs/reveal.js/4.1.3/reveal.css">
+  <link rel="stylesheet" href="libs/reveal.js/4.3.1/reset.css">
+  <link rel="stylesheet" href="libs/reveal.js/4.3.1/reveal.css">
 
-	
-	
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
-	  <!-- highlight Theme -->
-  	
-	  <link rel="stylesheet" href="libs/highlight.js/11.3.1/styles/monokai.min.css">
-	
+  <!-- highlight Theme -->
+  
+  <link rel="stylesheet" href="libs/highlight.js/11.3.1/styles/monokai.min.css">
+  
 	
 		
-	<link rel="stylesheet" href="libs/reveal.js/4.1.3/plugin/chalkboard/style.css">
+	<link rel="stylesheet" href="libs/reveal.js/4.3.1/plugin/chalkboard/style.css">
 	
 	
 	
-		<link rel="stylesheet" href="libs/reveal.js/4.1.3/plugin/customcontrols/style.css">
+  <link rel="stylesheet" href="libs/reveal.js/4.3.1/plugin/customcontrols/style.css">
+  
 	
-	<link rel="stylesheet" href="libs/styles/tasklist.css">
 
 
 
   <!-- Revealjs Theme -->
   
-  	<link rel="stylesheet" href="libs/reveal.js/4.1.3/theme/night.css" id="theme">
+  <link rel="stylesheet" href="libs/reveal.js/4.3.1/theme/night.css" id="theme">
   
   
+
+  <link rel="stylesheet" href="libs/styles/tasklist.css">
+	<link rel="stylesheet" href="libs/styles/iota.css">
+	<link rel="stylesheet" href="libs/styles/layout.css">
 
 
   <!-- Revealjs Theme -->
   
 
- 
+   <!-- css list -->
+	
+
+   
+
 </head>
 
 <body>
-  
 
+   
 
   <div class="reveal">
 
@@ -442,16 +448,9 @@ out
                 <p>Create backend/src/plugins/mongoose.ts</p>
 <pre><code class="language-typescript=">import mongoose from 'mongoose'
 
-const establishConnection = (connectionString: string) =&gt; {
-  mongoose.connect(connectionString, (error) =&gt; {
-    if (error) {
-      console.log(`Error in DB connection: ${error}`)
-    } else {
-      console.log(`MongoDB connection successful`)
-    }
-  })
+export const establishConnection = async (connectionString: string) =&gt; {
+  await mongoose.connect(connectionString)
 }
-export { establishConnection }
 </code></pre>
 
             </section>
@@ -497,14 +496,14 @@ export { establishConnection }
             </section>
         
             <section >
-                <p>Define interface</p>
+                <p>Define Type</p>
 <p>create backend/src/types/cat.ts</p>
-<pre><code class="language-typescript=">interface ICat {
+<pre><code class="language-typescript=">type Cat = {
     name: string
     weight: number
 }
 
-export { ICat }
+export { Cat }
 </code></pre>
 
             </section>
@@ -512,8 +511,8 @@ export { ICat }
             <section >
                 <p>Add mongo schema</p>
 <p>create backend/src/models/cat.ts</p>
-<pre><code class="language-typescript=">import { model, Schema } from 'mongoose'
-import { ICat } from '../types/cat'
+<pre><code class="language-typescript=">import { model, Schema }, mongoose from 'mongoose'
+import { Cat } from '../types/cat'
 
 const catSchema: Schema = new Schema(
     {
@@ -531,7 +530,7 @@ const catSchema: Schema = new Schema(
     }
 )
 
-export default model&lt;ICat&gt;('Cat', catSchema)
+export default mongoose.models.Cat || model&lt;Cat&gt;('Cat', catSchema)
 </code></pre>
 
             </section>
@@ -558,27 +557,12 @@ export default model&lt;ICat&gt;('Cat', catSchema)
             <section >
                 <p>Add Cat Repo</p>
 <p>create backend/src/repo/cat-repo.ts</p>
-<pre><code class="language-typescript=">import { ICat } from './../types/cat'
-import Cat from './../models/cat'
+<pre><code class="language-typescript=">import { Cat } from './../types/cat'
+import CatModel from './../models/cat'
 
-interface CatRepo {
-  getCats(): Promise&lt;Array&lt;ICat&gt;&gt;
+export const getCats: () =&gt; Promise&lt;Array&lt;Cat&gt;&gt; = () =&gt; {
+  return Cat.find()
 }
-
-class CatRepoImpl implements CatRepo {
-  private constructor() {}
-
-  static of(): CatRepoImpl {
-    return new CatRepoImpl()
-  }
-
-  async getCats(): Promise&lt;Array&lt;ICat&gt;&gt; {
-    return Cat.find()
-  }
-
-}
-
-export { CatRepoImpl }
 </code></pre>
 
             </section>
@@ -593,12 +577,12 @@ export { CatRepoImpl }
 <ul>
 <li>GET /cats</li>
 </ul>
-<pre><code class="language-typescript=">import { CatRepoImpl } from './repo/cat-repo'
+<pre><code class="language-typescript=">import * as repo from './repo/cat-repo'
 // ...
 server.get('/cats', async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
+  
   try {
-    const cats = await catRepo.getCats()
+    const cats = await repo.getCats()
     return reply.status(200).send({ cats })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -639,32 +623,16 @@ server.get('/cats', async (request, reply) =&gt; {
         
             <section >
                 <p>edit backend/src/repo/cat-repo.ts</p>
-<pre><code class="language-typescript=">import { ICat } from './../types/cat'
-import Cat from './../models/cat'
+<pre><code class="language-typescript=">import { Cat } from './../types/cat'
+import CatModel from './../models/cat'
 
-interface CatRepo {
-  getCats(): Promise&lt;Array&lt;ICat&gt;&gt;
-  addCat(catBody: ICat): Promise&lt;ICat&gt;
+const getCats: () =&gt; Promise&lt;Array&lt;Cat&gt;&gt; = () =&gt; {
+  return Cat.find()
 }
 
-class CatRepoImpl implements CatRepo {
-  private constructor() {}
-
-  static of(): CatRepoImpl {
-    return new CatRepoImpl()
-  }
-
-  async getCats(): Promise&lt;Array&lt;ICat&gt;&gt; {
-    return Cat.find()
-  }
-
-  async addCat(catBody: ICat): Promise&lt;ICat&gt; {
-    return Cat.create(catBody)
-  }
-
+const addCat: (catBody: Cat) =&gt; Promise&lt;Cat&gt; = (catBody) =&gt; {
+  return Cat.create(catBody)
 }
-
-export { CatRepoImpl }
 </code></pre>
 
             </section>
@@ -679,13 +647,12 @@ export { CatRepoImpl }
 <ul>
 <li>POST /cats</li>
 </ul>
-<pre><code class="language-typescript=">import { ICat } from './types/cat'
+<pre><code class="language-typescript=">import { Cat } from './types/cat'
 // ...
 server.post('/cats', async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
   try {
-    const catBody = request.body as ICat
-    const cat = await catRepo.addCat(catBody)
+    const catBody = request.body as Cat
+    const cat = await repo.addCat(catBody)
     return reply.status(201).send({ cat })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -847,26 +814,24 @@ server.post('/cats', async (request, reply) =&gt; {
                 <p>create backend/src/routes/cat.ts</p>
 <p>move API from server.ts to this file</p>
 <pre><code class="language-typescript=">import { FastifyInstance, RouteShorthandOptions, FastifyReply } from 'fastify'
-import { ICat } from '../types/cat'
-import { CatRepoImpl } from '../repo/cat-repo'
+import { Cat } from '../types/cat'
+import * as repo from '../repo/cat-repo'
 
 const CatRouter = (server: FastifyInstance, opts: RouteShorthandOptions, done: (error?: Error) =&gt; void) =&gt; {
 
     server.get('/cats', async (request, reply) =&gt; {
-        const catRepo = CatRepoImpl.of()
         try {
-            const cats = await catRepo.getCats()
+            const cats = await repo.getCats()
             return reply.status(200).send({ cats })
         } catch (error) {
             return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
         }
     })
 
-    server.post&lt;{ Body: ICat }&gt;('/cats', async (request, reply) =&gt; {
-        const catRepo = CatRepoImpl.of()
+    server.post&lt;{ Body: Cat }&gt;('/cats', async (request, reply) =&gt; {
         try {
             const catBody = request.body
-            const cat = await catRepo.addCat(catBody)
+            const cat = await repo.addCat(catBody)
             return reply.status(201).send({ cat })
         } catch (error) {
             return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -966,7 +931,7 @@ server.put&lt;{ Params: IdParams }&gt;('/cats/:id', async (request, reply) =&gt;
         
             <section >
                 <p>edit backend/src/repo/cat-repo.ts</p>
-<pre><code class="language-typescript=">async updateCat(id: String, catBody: ICat): Promise&lt;ICat | null&gt; {
+<pre><code class="language-typescript=">const updateCat: (id: String, catBody: Cat) =&gt; Promise&lt;Cat | null&gt; = (id, catBody) =&gt; {
   return Cat.findByIdAndUpdate(id, catBody, { new: true })
 }
 </code></pre>
@@ -977,12 +942,11 @@ server.put&lt;{ Params: IdParams }&gt;('/cats/:id', async (request, reply) =&gt;
             <section >
                 <p>Add API endpoint</p>
 <p>PUT /cats/:id</p>
-<pre><code class="language-typescript=">server.put&lt;{ Params: IdParams; Body: ICat }&gt;('/cats/:id', async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
+<pre><code class="language-typescript=">server.put&lt;{ Params: IdParams; Body: Cat }&gt;('/cats/:id', async (request, reply) =&gt; {
   try {
     const catBody = request.body
     const id = request.params.id
-    const cat = await catRepo.updateCat(id, catBody)
+    const cat = await repo.updateCat(id, catBody)
     return reply.status(200).send({ cat })
   } catch (error) {
     return reply.status(500).send({ msg: error })
@@ -994,7 +958,7 @@ server.put&lt;{ Params: IdParams }&gt;('/cats/:id', async (request, reply) =&gt;
         
             <section >
                 <p>if id not found</p>
-<pre><code class="language-typescript=">const cat = await catRepo.updateCat(id, catBody)
+<pre><code class="language-typescript=">const cat = await repo.updateCat(id, catBody)
 if (cat) {
     return reply.status(200).send({ cat })
 } else {
@@ -1017,15 +981,14 @@ if (!Types.ObjectId.isValid(id)) {
             </section>
         
             <section >
-                <pre><code class="language-typescript=">server.put&lt;{ Params: IdParams; Body: ICat }&gt;('/cats/:id', async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
+                <pre><code class="language-typescript=">server.put&lt;{ Params: IdParams; Body: Cat }&gt;('/cats/:id', async (request, reply) =&gt; {
   try {
     const catBody = request.body
     const id = request.params.id
     if (!Types.ObjectId.isValid(id)) {
         return reply.status(400).send({msg: `Invalid id`})
     }
-    const cat = await catRepo.updateCat(id, catBody)
+    const cat = await repo.updateCat(id, catBody)
     if (cat) {
         return reply.status(200).send({ cat })
     } else {
@@ -1054,7 +1017,7 @@ if (!Types.ObjectId.isValid(id)) {
         
             <section >
                 <p>edit backend/src/repo/cat-repo.ts</p>
-<pre><code class="language-typescript=">async deleteCat(id: string): Promise&lt;ICat | null&gt; {
+<pre><code class="language-typescript=">export const deleteCat: (id: string) =&gt; Promise&lt;Cat | null&gt; = (id) =&gt; {
   return Cat.findByIdAndDelete(id)
 }
 </code></pre>
@@ -1066,13 +1029,12 @@ if (!Types.ObjectId.isValid(id)) {
                 <p>Add API endpoint</p>
 <p>DELETE /cats/:id</p>
 <pre><code class="language-typescript=">server.delete&lt;{ Params: IdParams }&gt;('/cats/:id', async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
   try {
     const id = request.params.id
     if (!Types.ObjectId.isValid(id)) {
       return reply.status(400).send({ msg: `Invalid id` })
     }
-    const cat = await catRepo.deleteCat(id)
+    const cat = await repo.deleteCat(id)
     if (cat) {
       return reply.status(204).send()
     } else {
@@ -1122,16 +1084,15 @@ if (!Types.ObjectId.isValid(id)) {
             <section >
                 <pre><code>const bodySchema = {
   type: 'object',
-  required: ['name', 'status'],
+  required: ['name'],
   properties: {
     name: { type: 'string' },
-    description: { type: 'string' },
-    status: { type: 'boolean' }
+    status: { type: 'number' }
   }
 }
-const postOptions = { ...opts, schema: { body: bodySchema } }
+const postCatsOptions = { ...opts, schema: { body: bodySchema } }
 
-server.post('/todos', postOptions, async (request, reply) =&gt; {
+server.post('/cats', postCatsOptions, async (request, reply) =&gt; {
   // ...
 })
 </code></pre>
@@ -1184,9 +1145,8 @@ const catsResponseOptions =  { ...opts, schema: { response: { 200: CatsResponse 
 
 // put opts at the second parameter
 server.get('/cats', catsResponseOptions, async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
   try {
-    const cats = await catRepo.getCats()
+    const cats = await repo.getCats()
     return reply.status(200).send({ cats })
   } catch (error) {
     return reply.status(500).send({ msg: 'Internal Server Error' })
@@ -1227,9 +1187,8 @@ type CatResponse = Static&lt;typeof CatResponse&gt;
 opts = { ...opts, schema: { response: { 200: CatsResponse, 201: CatResponse } } }
 
 server.get('/cats', opts, async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
   try {
-    const cats = await catRepo.getCats()
+    const cats = await repo.getCats()
     return reply.status(200).send({ cats })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -1237,10 +1196,9 @@ server.get('/cats', opts, async (request, reply) =&gt; {
 })
 
 server.post('/cats', opts, async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
   try {
-    const catBody = request.body as ICat
-    const cat = await catRepo.addCat(catBody)
+    const catBody = request.body as Cat
+    const cat = await repo.addCat(catBody)
     return reply.status(201).send({ cat })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -1552,7 +1510,7 @@ export const clearDatabase = async () =&gt; {
 <pre><code class="language-typescript=">import { FastifyInstance } from 'fastify'
 import { startFastify } from '../server'
 import * as dbHandler from './db'
-import { ICat } from '../types/cat'
+import { Cat } from '../types/cat'
 
 describe('Cat API test', () =&gt; {
   let server: FastifyInstance
@@ -1592,7 +1550,7 @@ describe('Cat API test', () =&gt; {
     })
 
     expect(response.statusCode).toBe(201)
-    const cat: ICat = JSON.parse(response.body)['cat']
+    const cat: Cat = JSON.parse(response.body)['cat']
     expect(cat.name).toBe('fat cat')
     expect(cat.weight).toBe(6.8)
 
@@ -1635,7 +1593,7 @@ describe('Cat API test', () =&gt; {
 <pre><code class="language-typescript=">import { FastifyInstance } from 'fastify'
 import { startFastify } from '../server'
 import * as dbHandler from 'testcontainers-mongoose'
-import { ICat } from '../types/cat'
+import { Cat } from '../types/cat'
 
 describe('Cat API test', () =&gt; {
   let server: FastifyInstance
@@ -1675,7 +1633,7 @@ describe('Cat API test', () =&gt; {
     })
 
     expect(response.statusCode).toBe(201)
-    const cat: ICat = JSON.parse(response.body)['cat']
+    const cat: Cat = JSON.parse(response.body)['cat']
     expect(cat.name).toBe('fat cat')
     expect(cat.weight).toBe(6.8)
 
@@ -1853,48 +1811,50 @@ npm run start
 
   </div>
 
-  	
-	<script src="libs/reveal.js/4.1.3/reveal.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/zoom/zoom.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/notes/notes.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/search/search.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/markdown/markdown.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/highlight/highlight.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/menu/menu.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/math/math.js"></script>
+  <div class="line top"></div>
+  <div class="line bottom"></div>
+  <div class="line left"></div>
+  <div class="line right"></div>
 
-	<script src="libs/reveal.js/4.1.3/plugin/fullscreen/plugin.js"></script>
+  <script src="libs/reveal.js/4.3.1/reveal.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/notes/notes.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/markdown/markdown.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/highlight/highlight.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/math/math.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/fullscreen/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/animate/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/animate/svg.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/Chart.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/d3/d3.v3.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/d3.patch.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/d3/queue.v1.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/d3/topojson.v1.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/function-plot.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/customcontrols/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/embed-tweet/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/chart/chart.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/chart/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/verticator/verticator.js"></script>
+
+<script src="libs/reveal.js/4.3.1/plugin/zoom/zoom.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/search/search.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/menu/menu.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/chalkboard/plugin.js"></script>
+
+<!--	<script src="libs/reveal.js/4.3.1/plugin/audio-slideshow/plugin.js"></script>  -->
+<!--	<script src="libs/reveal.js/4.3.1/plugin/audio-slideshow/recorder.js"></script>-->
+<!--	<script src="libs/reveal.js/4.3.1/plugin/audio-slideshow/RecordRTC.js"></script>-->
+
   
-  	<script src="libs/reveal.js/4.1.3/plugin/animate/plugin.js"></script>
-  	<script src="libs/reveal.js/4.1.3/plugin/animate/svg.min.js"></script>
-  
-  	<script src="libs/reveal.js/4.1.3/plugin/anything/plugin.js"></script>
-	  <script src="libs/reveal.js/4.1.3/plugin/anything/Chart.min.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/anything/d3/d3.v3.min.js"></script>				
-	<script src="libs/reveal.js/4.1.3/plugin/anything/d3.patch.js"></script>			
-	<script src="libs/reveal.js/4.1.3/plugin/anything/d3/queue.v1.min.js"></script>		
-	<script src="libs/reveal.js/4.1.3/plugin/anything/d3/topojson.v1.min.js"></script>		
-	<script src="libs/reveal.js/4.1.3/plugin/anything/function-plot.js"></script>
 
- <!--	<script src="libs/reveal.js/4.1.3/plugin/audio-slideshow/plugin.js"></script>  -->
-<!--	<script src="libs/reveal.js/4.1.3/plugin/audio-slideshow/recorder.js"></script>-->
-<!--	<script src="libs/reveal.js/4.1.3/plugin/audio-slideshow/RecordRTC.js"></script>-->
-
-<script src="libs/reveal.js/4.1.3/plugin/chalkboard/plugin.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/customcontrols/plugin.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/embed-tweet/plugin.js"></script>
-
-	<script src="libs/reveal.js/4.1.3/plugin/chart/chart.min.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/chart/plugin.js"></script>
-
-  <script>
-
-		const printPlugins = [
-			RevealNotes, 
-			RevealHighlight,
-			RevealMath,
-			RevealAnimate,
-			RevealChalkboard, 
+<script>
+  const printPlugins = [
+      RevealNotes,
+      RevealHighlight,
+      RevealMath.MathJax3,
+      RevealAnimate,
+      RevealChalkboard, 
 			RevealEmbedTweet,
 			RevealChart,
 		];
@@ -1912,6 +1872,7 @@ npm run start
 				// poll
 				// question
 				// seminar
+				Verticator 
 				 ]
 
 
@@ -1919,93 +1880,93 @@ npm run start
 		// https://revealjs.com/initialization/
 		Reveal.initialize({
 			controls: true,
-			controlsTutorial: true,
-			controlsLayout: 'bottom-right',
-			controlsBackArrows: 'faded',
-			progress: true,
-			slideNumber: true,
-			//#showSlideNumber "all" "print" "speaker"
-			hash: true,//#  hash: false,
-			//# respondToHashChanges: true,
-			//# history: false,
-			keyboard: true,
-			//#keyboardCondition: null,
-			overview: true,
-			center: true,
-			touch: true,
-			loop: false,
-			rtl: false,
-			//#navigationMode: 'default', linear grid
-			shuffle: false,
-			fragments: true,
-			fragmentInURL: false,
-			embedded: false,
-			help: true,
-			//#pause: true
-			showNotes: false,
-			autoPlayMedia: false, // TODO fix this to a nullable value
-			//#preloadIframes: null. true false
-			//#autoAnimate: true
-			//#autoAnimateMatcher: null,
-			//#autoAnimateEasing: 'ease',
-			//autoAnimateDuration: 1.0,
-			//#autoAnimateUnmatched: true
-			//#autoAnimateStyles: []
-			autoSlide: 0, // TODO fix this to a falseable value
-			autoSlideStoppable: true,
-			autoSlideMethod: '0',
-			defaultTiming: 120,
-			mouseWheel: false,
-			//#previewLinks: false
-			//#postMessage: true,  // TODO : this can cause issues with the vscode api ???
-			//#postMessageEvents: false,
-			//#focusBodyOnPageVisibilityChange: true,
-			transition: 'slide',
-			transitionSpeed: 'default',
-			backgroundTransition: 'fade',
-			//#pdfMaxPagesPerSlide: Number.POSITIVE_INFINITY,
-			//#pdfSeparateFragments: true,
-			//#pdfPageHeightOffset: -1,
-			viewDistance: 3,
-			//#mobileViewDistance: 2,
-			display: 'block',
-			//#hideInactiveCursor: true,
-			//#hideCursorTime: 5000
+      controlsTutorial: true,
+      controlsLayout: 'bottom-right',
+      controlsBackArrows: 'faded',
+      progress: true,
+      slideNumber: true,
+      //#showSlideNumber "all" "print" "speaker"
+      hash: true, //# hash: false,
+      //# respondToHashChanges: true,
+      //# history: false,
+      keyboard: true,
+      //#keyboardCondition: null,
+      overview: true,
+      center: true,
+      touch: true,
+      loop: false,
+      rtl: false,
+      //#navigationMode: 'default', linear grid
+      shuffle: false,
+      fragments: true,
+      fragmentInURL: false,
+      embedded: false,
+      help: true,
+      //#pause: true
+      showNotes: false,
+      autoPlayMedia: false, // TODO fix this to a nullable value
+      //#preloadIframes: null. true false
+      //#autoAnimate: true
+      //#autoAnimateMatcher: null,
+      //#autoAnimateEasing: 'ease',
+      //autoAnimateDuration: 1.0,
+      //#autoAnimateUnmatched: true
+      //#autoAnimateStyles: []
+      autoSlide: 0, // TODO fix this to a falseable value
+      autoSlideStoppable: true,
+      autoSlideMethod: '0',
+      defaultTiming: 120,
+      mouseWheel: false,
+      //#previewLinks: false
+      //#postMessage: true, // TODO : this can cause issues with the vscode api ???
+      //#postMessageEvents: false,
+      //#focusBodyOnPageVisibilityChange: true,
+      transition: 'slide',
+      transitionSpeed: 'default',
+      backgroundTransition: 'fade',
+      //#pdfMaxPagesPerSlide: Number.POSITIVE_INFINITY,
+      //#pdfSeparateFragments: true,
+      //#pdfPageHeightOffset: -1,
+      viewDistance: 3,
+      //#mobileViewDistance: 2,
+      display: 'block',
+      //#hideInactiveCursor: true,
+      //#hideCursorTime: 5000
 
-			// Parallax Background
-			parallaxBackgroundImage: '',
-			parallaxBackgroundSize: '',
-			parallaxBackgroundHorizontal: 0,
-			parallaxBackgroundVertical: 0,
-			
-			//Presentation Size
-			width: 960,
+      // Parallax Background
+      parallaxBackgroundImage: '',
+      parallaxBackgroundSize: '',
+      parallaxBackgroundHorizontal: 0,
+      parallaxBackgroundVertical: 0,
+
+      //Presentation Size
+      width: 960,
 			height: 700,
 			margin: 0.04,
-			minScale: 0.2,
-			maxScale: 2,
-			disableLayout: false,
+      minScale: 0.2,
+      maxScale: 2,
+      disableLayout: false,
 
-			audio: {
-				prefix: 'audio/', 	// audio files are stored in the "audio" folder
-				suffix: '.ogg',		// audio files have the ".ogg" ending
-				textToSpeechURL: null,  // the URL to the text to speech converter
-				defaultNotes: false, 	// use slide notes as default for the text to speech converter
-				defaultText: false, 	// use slide text as default for the text to speech converter
-				advance: 0, 		// advance to next slide after given time in milliseconds after audio has played, use negative value to not advance
-				autoplay: false,	// automatically start slideshow
-				defaultDuration: 5,	// default duration in seconds if no audio is available
-				defaultAudios: true,	// try to play audios with names such as audio/1.2.ogg
-				playerOpacity: 0.05,	// opacity value of audio player if unfocused
-				playerStyle: 'position: fixed; bottom: 4px; left: 25%; width: 50%; height:75px; z-index: 33;', // style used for container of audio controls
-				startAtFragment: false, // when moving to a slide, start at the current fragment or at the start of the slide
-			},
-			
-			chalkboard: { // font-awesome.min.css must be available
-					//src: "chalkboard/chalkboard.json",
-					storage: "chalkboard-demo",
-				},
-			
+      audio: {
+        prefix: 'audio/', // audio files are stored in the "audio" folder
+        suffix: '.ogg', // audio files have the ".ogg" ending
+        textToSpeechURL: null, // the URL to the text to speech converter
+        defaultNotes: false, // use slide notes as default for the text to speech converter
+        defaultText: false, // use slide text as default for the text to speech converter
+        advance: 0, // advance to next slide after given time in milliseconds after audio has played, use negative value to not advance
+        autoplay: false, // automatically start slideshow
+        defaultDuration: 5, // default duration in seconds if no audio is available
+        defaultAudios: true, // try to play audios with names such as audio/1.2.ogg
+        playerOpacity: 0.05, // opacity value of audio player if unfocused
+        playerStyle: 'position: fixed; bottom: 4px; left: 25%; width: 50%; height:75px; z-index: 33;', // style used for container of audio controls
+        startAtFragment: false, // when moving to a slide, start at the current fragment or at the start of the slide
+      },
+      
+      chalkboard: { // font-awesome.min.css must be available
+        //src: "chalkboard/chalkboard.json",
+        storage: "chalkboard-demo",
+      },
+      
 			customcontrols: {
 					controls: [
       						{
@@ -2015,14 +1976,17 @@ npm run start
 						  action: 'Reveal.toggleOverview();'
 						}
 						,
-						{ icon: '<i class="fa fa-pen-square"></i>',
-						  title: 'Toggle chalkboard (B)',
-						  action: 'RevealChalkboard.toggleChalkboard();'
-						},
-						{ icon: '<i class="fa fa-pen"></i>',
-						  title: 'Toggle notes canvas (C)',
-						  action: 'RevealChalkboard.toggleNotesCanvas();'
-						}
+      {
+        icon: '<i class="fa fa-pen-square"></i>',
+        title: 'Toggle chalkboard (B)',
+        action: 'RevealChalkboard.toggleChalkboard();'
+      },
+      {
+        icon: '<i class="fa fa-pen"></i>',
+        title: 'Toggle notes canvas (C)',
+        action: 'RevealChalkboard.toggleNotesCanvas();'
+      }
+      
 				]
 			},
 			chart: {
@@ -2091,9 +2055,7 @@ npm run start
 			  }, 2500);
 			
     }
-		
-
-	</script>
+</script>
 
 </body>
 
