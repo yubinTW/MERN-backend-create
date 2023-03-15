@@ -126,7 +126,7 @@ edit backend/tsconfig.json
 "exclude": ["node_modules"],
 
 "compilerOptions": {
-  "outDir": "./out",
+  "outDir": "./dist",
   "rootDir": "./src",
 }
 ```
@@ -208,7 +208,7 @@ tsc
 - run with node
 
 ```
-node out/index.js
+node dist/index.js
 ```
 
 --
@@ -220,7 +220,7 @@ Define custom npm scripts
 ```json=
 "scripts": {
   "build": "tsc",
-  "start": "node out/index.js"
+  "start": "node dist/index.js"
 },
 ```
 
@@ -606,7 +606,7 @@ npm i -D concurrently nodemon
 - add the script in package.json
 
 ```
-"dev": "concurrently \"tsc -w \" \"nodemon out/index.js\""
+"dev": "concurrently \"tsc -w \" \"nodemon dist/index.js\""
 ```
 
 - run the script
@@ -1072,7 +1072,7 @@ module.exports = {
   testTimeout: 20000,
   testPathIgnorePatterns: [
     "/node_modules/",
-    "/out/"
+    "/dist/"
   ]
 }
 ```
@@ -1089,7 +1089,7 @@ https://jestjs.io/docs/cli
 "scripts": {
   "test": "jest --verbose --coverage --runInBand",
   "build": "tsc",
-  "start": "node out/index.js"
+  "start": "node dist/index.js"
 }
 ```
 

@@ -203,7 +203,7 @@ npx tsc --init
 &quot;exclude&quot;: [&quot;node_modules&quot;],
 
 &quot;compilerOptions&quot;: {
-  &quot;outDir&quot;: &quot;./out&quot;,
+  &quot;outDir&quot;: &quot;./dist&quot;,
   &quot;rootDir&quot;: &quot;./src&quot;,
 }
 </code></pre>
@@ -281,7 +281,7 @@ export { server }
 <ul>
 <li>run with node</li>
 </ul>
-<pre><code>node out/index.js
+<pre><code>node dist/index.js
 </code></pre>
 
             </section>
@@ -293,7 +293,7 @@ export { server }
 </ul>
 <pre><code class="language-json=">&quot;scripts&quot;: {
   &quot;build&quot;: &quot;tsc&quot;,
-  &quot;start&quot;: &quot;node out/index.js&quot;
+  &quot;start&quot;: &quot;node dist/index.js&quot;
 },
 </code></pre>
 
@@ -738,7 +738,7 @@ server.post('/cats', async (request, reply) =&gt; {
 <ul>
 <li>add the script in package.json</li>
 </ul>
-<pre><code>&quot;dev&quot;: &quot;concurrently \&quot;tsc -w \&quot; \&quot;nodemon out/index.js\&quot;&quot;
+<pre><code>&quot;dev&quot;: &quot;concurrently \&quot;tsc -w \&quot; \&quot;nodemon dist/index.js\&quot;&quot;
 </code></pre>
 <ul>
 <li>run the script</li>
@@ -1265,7 +1265,7 @@ server.post('/cats', opts, async (request, reply) =&gt; {
   testTimeout: 20000,
   testPathIgnorePatterns: [
     &quot;/node_modules/&quot;,
-    &quot;/out/&quot;
+    &quot;/dist/&quot;
   ]
 }
 </code></pre>
@@ -1279,7 +1279,7 @@ server.post('/cats', opts, async (request, reply) =&gt; {
 <pre><code>&quot;scripts&quot;: {
   &quot;test&quot;: &quot;jest --verbose --coverage --runInBand&quot;,
   &quot;build&quot;: &quot;tsc&quot;,
-  &quot;start&quot;: &quot;node out/index.js&quot;
+  &quot;start&quot;: &quot;node dist/index.js&quot;
 }
 </code></pre>
 
