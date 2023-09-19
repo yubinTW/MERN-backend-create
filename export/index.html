@@ -2,57 +2,63 @@
 <html lang="en">
 
 <head>
-	<meta charset="utf-8">
+  <meta charset="utf-8">
 
-	<title>MERN Backend</title>
+  <title>MERN Backend</title>
 
-	<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
-	<meta name="author" content="Hakim El Hattab">
+  <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+  <meta name="author" content="Hakim El Hattab">
 
-	<meta name="apple-mobile-web-app-capable" content="yes">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-	<link rel="stylesheet" href="libs/reveal.js/4.1.3/reset.css">
-	<link rel="stylesheet" href="libs/reveal.js/4.1.3/reveal.css">
+  <link rel="stylesheet" href="libs/reveal.js/4.3.1/reset.css">
+  <link rel="stylesheet" href="libs/reveal.js/4.3.1/reveal.css">
 
-	
-	
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
-	  <!-- highlight Theme -->
-  	
-	  <link rel="stylesheet" href="libs/highlight.js/11.3.1/styles/monokai.min.css">
-	
+  <!-- highlight Theme -->
+  
+  <link rel="stylesheet" href="libs/highlight.js/11.3.1/styles/monokai.min.css">
+  
 	
 		
-	<link rel="stylesheet" href="libs/reveal.js/4.1.3/plugin/chalkboard/style.css">
+	<link rel="stylesheet" href="libs/reveal.js/4.3.1/plugin/chalkboard/style.css">
 	
 	
 	
-		<link rel="stylesheet" href="libs/reveal.js/4.1.3/plugin/customcontrols/style.css">
+  <link rel="stylesheet" href="libs/reveal.js/4.3.1/plugin/customcontrols/style.css">
+  
 	
-	<link rel="stylesheet" href="libs/styles/tasklist.css">
 
 
 
   <!-- Revealjs Theme -->
   
-  	<link rel="stylesheet" href="libs/reveal.js/4.1.3/theme/night.css" id="theme">
+  <link rel="stylesheet" href="libs/reveal.js/4.3.1/theme/night.css" id="theme">
   
   
+
+  <link rel="stylesheet" href="libs/styles/tasklist.css">
+	<link rel="stylesheet" href="libs/styles/iota.css">
+	<link rel="stylesheet" href="libs/styles/layout.css">
 
 
   <!-- Revealjs Theme -->
   
 
- 
+   <!-- css list -->
+	
+
+   
+
 </head>
 
 <body>
-  
 
+   
 
   <div class="reveal">
 
@@ -119,7 +125,6 @@ p {
     }
     
 </script>
-
             </section>
     
 
@@ -197,7 +202,7 @@ npx tsc --init
 &quot;exclude&quot;: [&quot;node_modules&quot;],
 
 &quot;compilerOptions&quot;: {
-  &quot;outDir&quot;: &quot;./out&quot;,
+  &quot;outDir&quot;: &quot;./dist&quot;,
   &quot;rootDir&quot;: &quot;./src&quot;,
 }
 </code></pre>
@@ -215,52 +220,56 @@ npx tsc --init
                 <p>create backend/src/server.ts</p>
 <pre><code class="language-typescript=">import fastify, { FastifyInstance } from 'fastify'
 
-const server: FastifyInstance = fastify({
+export const serverOf: () =&gt; FastifyInstance = () =&gt; {
+ const server = fastify({
   logger: {
     transport: {
       target: 'pino-pretty'
     },
     level: 'debug'
   }
-})
+ })
 
-const startFastify: (port: number) =&gt; FastifyInstance = (port) =&gt; {
+ server.get('/ping', async (request, reply) =&gt; {
+    return reply.status(200).send({ msg: 'pong' })
+ })
+
+ return server
+
+}
+
+export const serverStart: (port: number) =&gt; (server: FastifyInstance) =&gt; Promise&lt;FastifyInstance&gt; = (port) =&gt; async (server) =&gt; {
   const listenAddress = '0.0.0.0'
   const fastifyConfig = {
     port: port,
     host: listenAddress
   }
 
-  server.listen(fastifyConfig, (error, _) =&gt; {
-    if (error) {
-      console.error(error)
-    }
-  })
-
-  server.get('/ping', async (request, reply) =&gt; {
-    return reply.status(200).send({ msg: 'pong' })
-  })
+  await server.listen(fastifyConfig)
 
   return server
 }
-
-export { startFastify }
 </code></pre>
 
             </section>
         
             <section >
                 <p>create backend/src/index.ts</p>
-<pre><code class="language-typescript=">import { startFastify } from './server'
+<pre><code class="language-typescript=">import { serverOf, serverStart } from './server'
 import * as dotenv from 'dotenv'
 
 dotenv.config()
-const port = process.env.FASTIFY_PORT || '8888'
+const port = parseInt(process.env.FASTIFY_PORT || '8888')
 
-// Start your server
-const server = startFastify(parseInt(port))
+const server = serverOf()
 
-export { server }
+serverStart(port)(server)
+  .then(() =&gt; {
+    console.log(`Server start successfully`)
+  })
+  .catch((error) =&gt; {
+    console.log(`Failed to start server: ${error}`)
+  })
 </code></pre>
 
             </section>
@@ -275,7 +284,7 @@ export { server }
 <ul>
 <li>run with node</li>
 </ul>
-<pre><code>node out/index.js
+<pre><code>node dist/index.js
 </code></pre>
 
             </section>
@@ -287,7 +296,7 @@ export { server }
 </ul>
 <pre><code class="language-json=">&quot;scripts&quot;: {
   &quot;build&quot;: &quot;tsc&quot;,
-  &quot;start&quot;: &quot;node out/index.js&quot;
+  &quot;start&quot;: &quot;node dist/index.js&quot;
 },
 </code></pre>
 
@@ -365,9 +374,89 @@ npm run start
     
     <section>
         <section >
+            <h3>prettier</h3>
+
+            </section>
+        
+            <section >
+                <p>install prettier</p>
+<pre><code>npm i -D prettier
+</code></pre>
+
+            </section>
+        
+            <section >
+                <p>add backend/.prettierrc.json</p>
+<pre><code>{
+  &quot;semi&quot;: false,
+  &quot;singleQuote&quot;: true,
+  &quot;printWidth&quot;: 120,
+  &quot;trailingComma&quot;: &quot;none&quot;,
+  &quot;arrowParens&quot;: &quot;always&quot;
+}
+</code></pre>
+<p>ref: <a href="https://prettier.io/docs/en/options.html">https://prettier.io/docs/en/options.html</a></p>
+
+            </section>
+        
+            <section >
+                <ul>
+<li>add the script in package.json</li>
+</ul>
+<pre><code>&quot;fix-prettier&quot;: &quot;prettier --write \&quot;./src/**/*.ts\&quot;&quot;
+</code></pre>
+<ul>
+<li>format code by prettier</li>
+</ul>
+<pre><code>npm run fix-prettier
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
+            <h4>Rebuild automatically when the code is changed</h4>
+
+            </section>
+        
+            <section >
+                <ul>
+<li>install concurrently and nodemon</li>
+</ul>
+<pre><code>npm i -D concurrently nodemon
+</code></pre>
+<ul>
+<li>add the script in package.json</li>
+</ul>
+<pre><code>&quot;dev&quot;: &quot;concurrently \&quot;tsc -w \&quot; \&quot;nodemon dist/index.js\&quot;&quot;
+</code></pre>
+<ul>
+<li>run the script</li>
+</ul>
+<pre><code>npm run dev
+</code></pre>
+
+            </section>
+        
+
+    </section>
+    
+
+
+
+    
+    <section>
+        <section >
             <p>create <code>.gitignore</code></p>
 <pre><code class="language-plaintext=">node_modules
-out
+dist
 .env
 </code></pre>
 
@@ -462,13 +551,10 @@ export { establishConnection }
 
 // ...
 
-  server.listen(fastifyConfig, (error, _) =&gt; {
-      if (error) {
-        console.error(error)
-      }
-      const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myMERN'
-      establishConnection(connectionString)
-  })
+await server.listen(fastifyConfig)
+
+const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myMERN'
+await establishConnection(connectionString)
 
 // ...
 </code></pre>
@@ -499,12 +585,10 @@ export { establishConnection }
             <section >
                 <p>Define interface</p>
 <p>create backend/src/types/cat.ts</p>
-<pre><code class="language-typescript=">interface ICat {
+<pre><code class="language-typescript=">export type Cat = {
     name: string
     weight: number
 }
-
-export { ICat }
 </code></pre>
 
             </section>
@@ -512,8 +596,8 @@ export { ICat }
             <section >
                 <p>Add mongo schema</p>
 <p>create backend/src/models/cat.ts</p>
-<pre><code class="language-typescript=">import { model, Schema } from 'mongoose'
-import { ICat } from '../types/cat'
+<pre><code class="language-typescript=">import mongoose, { model, Schema } from 'mongoose'
+import { Cat } from '../types/cat'
 
 const catSchema: Schema = new Schema(
     {
@@ -531,7 +615,7 @@ const catSchema: Schema = new Schema(
     }
 )
 
-export default model&lt;ICat&gt;('Cat', catSchema)
+export default mongoose.models.Cat || model&lt;Cat&gt;('Cat', catSchema)
 </code></pre>
 
             </section>
@@ -557,28 +641,11 @@ export default model&lt;ICat&gt;('Cat', catSchema)
         
             <section >
                 <p>Add Cat Repo</p>
-<p>create backend/src/repo/cat-repo.ts</p>
-<pre><code class="language-typescript=">import { ICat } from './../types/cat'
-import Cat from './../models/cat'
+<p>create backend/src/repo/cat.ts</p>
+<pre><code class="language-typescript=">import { Cat } from '../types/cat'
+import CatModel from '../models/cat'
 
-interface CatRepo {
-  getCats(): Promise&lt;Array&lt;ICat&gt;&gt;
-}
-
-class CatRepoImpl implements CatRepo {
-  private constructor() {}
-
-  static of(): CatRepoImpl {
-    return new CatRepoImpl()
-  }
-
-  async getCats(): Promise&lt;Array&lt;ICat&gt;&gt; {
-    return Cat.find()
-  }
-
-}
-
-export { CatRepoImpl }
+export const getCats: () =&gt; Promise&lt;Array&lt;ICat&gt;&gt; = () =&gt; CatModel.find({})
 </code></pre>
 
             </section>
@@ -593,7 +660,7 @@ export { CatRepoImpl }
 <ul>
 <li>GET /cats</li>
 </ul>
-<pre><code class="language-typescript=">import { CatRepoImpl } from './repo/cat-repo'
+<pre><code class="language-typescript=">import { CatRepoImpl } from './repo/cat'
 // ...
 server.get('/cats', async (request, reply) =&gt; {
   const catRepo = CatRepoImpl.of()
@@ -638,33 +705,13 @@ server.get('/cats', async (request, reply) =&gt; {
             </section>
         
             <section >
-                <p>edit backend/src/repo/cat-repo.ts</p>
-<pre><code class="language-typescript=">import { ICat } from './../types/cat'
-import Cat from './../models/cat'
+                <p>edit backend/src/repo/cat.ts</p>
+<pre><code class="language-typescript=">import { Cat } from './../types/cat'
+import CatModel from './../models/cat'
 
-interface CatRepo {
-  getCats(): Promise&lt;Array&lt;ICat&gt;&gt;
-  addCat(catBody: ICat): Promise&lt;ICat&gt;
-}
+export const getCats: () =&gt; Promise&lt;Array&lt;ICat&gt;&gt; = () =&gt; Cat.find({})
 
-class CatRepoImpl implements CatRepo {
-  private constructor() {}
-
-  static of(): CatRepoImpl {
-    return new CatRepoImpl()
-  }
-
-  async getCats(): Promise&lt;Array&lt;ICat&gt;&gt; {
-    return Cat.find()
-  }
-
-  async addCat(catBody: ICat): Promise&lt;ICat&gt; {
-    return Cat.create(catBody)
-  }
-
-}
-
-export { CatRepoImpl }
+export const addCat: (catBody: ICat) =&gt; Promise&lt;ICat&gt; = (catBody) =&gt; Cat.create(catBody)
 </code></pre>
 
             </section>
@@ -679,13 +726,12 @@ export { CatRepoImpl }
 <ul>
 <li>POST /cats</li>
 </ul>
-<pre><code class="language-typescript=">import { ICat } from './types/cat'
+<pre><code class="language-typescript=">import { Cat } from './types/cat'
 // ...
 server.post('/cats', async (request, reply) =&gt; {
-  const catRepo = CatRepoImpl.of()
   try {
     const catBody = request.body as ICat
-    const cat = await catRepo.addCat(catBody)
+    const cat = await addCat(catBody)
     return reply.status(201).send({ cat })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -758,86 +804,6 @@ server.post('/cats', async (request, reply) =&gt; {
     
     <section>
         <section >
-            <h4>Rebuild automatically when the code is changed</h4>
-
-            </section>
-        
-            <section >
-                <ul>
-<li>install concurrently and nodemon</li>
-</ul>
-<pre><code>npm i -D concurrently nodemon
-</code></pre>
-<ul>
-<li>add the script in package.json</li>
-</ul>
-<pre><code>&quot;dev&quot;: &quot;concurrently \&quot;tsc -w \&quot; \&quot;nodemon out/index.js\&quot;&quot;
-</code></pre>
-<ul>
-<li>run the script</li>
-</ul>
-<pre><code>npm run dev
-</code></pre>
-
-            </section>
-        
-
-    </section>
-    
-
-
-
-    
-    <section>
-        <section >
-            <h3>prettier</h3>
-
-            </section>
-        
-            <section >
-                <p>install prettier</p>
-<pre><code>npm i -D prettier
-</code></pre>
-
-            </section>
-        
-            <section >
-                <p>add backend/.prettierrc</p>
-<pre><code>{
-  &quot;semi&quot;: false,
-  &quot;singleQuote&quot;: true,
-  &quot;printWidth&quot;: 120,
-  &quot;trailingComma&quot;: &quot;none&quot;,
-  &quot;arrowParens&quot;: &quot;always&quot;
-}
-</code></pre>
-<p>ref: <a href="https://prettier.io/docs/en/options.html">https://prettier.io/docs/en/options.html</a></p>
-
-            </section>
-        
-            <section >
-                <ul>
-<li>add the script in package.json</li>
-</ul>
-<pre><code>&quot;fix-prettier&quot;: &quot;prettier --write \&quot;./src/**/*.ts\&quot;&quot;
-</code></pre>
-<ul>
-<li>format code by prettier</li>
-</ul>
-<pre><code>npm run fix-prettier
-</code></pre>
-
-            </section>
-        
-
-    </section>
-    
-
-
-
-    
-    <section>
-        <section >
             <h4>Define API routes as a plugin</h4>
 <p>ref: <a href="https://www.fastify.io/docs/latest/Reference/Plugins/#create-a-plugin">https://www.fastify.io/docs/latest/Reference/Plugins/#create-a-plugin</a></p>
 
@@ -886,7 +852,7 @@ export { CatRouter }
             <section >
                 <h4>register CatRouter</h4>
 <p>edit backend/src/server.ts</p>
-<pre><code class="language-typescript">server.register(CatRouter, { prefix: '/v1' })
+<pre><code class="language-typescript">server.register(CatRouter, { prefix: &quot;/v1&quot; });
 </code></pre>
 
             </section>
@@ -1296,20 +1262,10 @@ server.post('/cats', opts, async (request, reply) =&gt; {
     &quot;^.+\\.(t|j)sx?$&quot;: &quot;ts-jest&quot;,
   },
   testEnvironment: &quot;node&quot;,
-  moduleFileExtensions: [
-    &quot;ts&quot;,
-    &quot;tsx&quot;,
-    &quot;js&quot;,
-    &quot;jsx&quot;,
-    &quot;json&quot;,
-    &quot;node&quot;,
-  ],
+  moduleFileExtensions: [&quot;ts&quot;, &quot;tsx&quot;, &quot;js&quot;, &quot;jsx&quot;, &quot;json&quot;, &quot;node&quot;],
   testTimeout: 20000,
-  testPathIgnorePatterns: [
-    &quot;/node_modules/&quot;,
-    &quot;/out/&quot;
-  ]
-}
+  testPathIgnorePatterns: [&quot;/node_modules/&quot;, &quot;/out/&quot;],
+};
 </code></pre>
 
             </section>
@@ -1352,7 +1308,7 @@ describe('Server test', () =&gt; {
         server = startFastify(8888)
         await server.ready()
     })
-    
+
     afterAll(async () =&gt; {
         try {
             await server.close()
@@ -1400,32 +1356,32 @@ describe('Server test', () =&gt; {
     <section>
         <section >
             <h4>describe &amp; it</h4>
-<pre><code class="language-typescript">describe('Server test', () =&gt; {
-    it('should successfully get a pong string', () =&gt; {
-        // Some testing condition
-    })
-})
+<pre><code class="language-typescript">describe(&quot;Server test&quot;, () =&gt; {
+  it(&quot;should successfully get a pong string&quot;, () =&gt; {
+    // Some testing condition
+  });
+});
 </code></pre>
 
             </section>
         
             <section >
-                <pre><code class="language-typescript">describe('API test', () =&gt; {
-    it('should successfully get a pong string', () =&gt; {
-        // Some testing condition
-    })
-    it('test B', () =&gt; {})
-    it('test C', () =&gt; {})
-    it('test D', () =&gt; {})
-})
+                <pre><code class="language-typescript">describe(&quot;API test&quot;, () =&gt; {
+  it(&quot;should successfully get a pong string&quot;, () =&gt; {
+    // Some testing condition
+  });
+  it(&quot;test B&quot;, () =&gt; {});
+  it(&quot;test C&quot;, () =&gt; {});
+  it(&quot;test D&quot;, () =&gt; {});
+});
 </code></pre>
 
             </section>
         
             <section >
                 <h4>expect</h4>
-<pre><code class="language-typescript">expect(response.statusCode).toBe(200)
-expect(response.body).toStrictEqual(JSON.stringify({ msg: 'pong' }))
+<pre><code class="language-typescript">expect(response.statusCode).toBe(200);
+expect(response.body).toStrictEqual(JSON.stringify({ msg: &quot;pong&quot; }));
 </code></pre>
 <ul>
 <li>toBe() - to compare primitive values or to check referential identity of object instances</li>
@@ -1436,23 +1392,23 @@ expect(response.body).toStrictEqual(JSON.stringify({ msg: 'pong' }))
         
             <section >
                 <p><a href="https://jestjs.io/docs/expect">https://jestjs.io/docs/expect</a></p>
-<pre><code class="language-typescript">expect(1 + 2).toBeLessThan(4)
-expect(1 + 2).toBeLessThanOrEqual(3)
-expect(['A', 'B', 'C']).toContain('B')  
-expect(1 + 2).not.toBe(4)
+<pre><code class="language-typescript">expect(1 + 2).toBeLessThan(4);
+expect(1 + 2).toBeLessThanOrEqual(3);
+expect([&quot;A&quot;, &quot;B&quot;, &quot;C&quot;]).toContain(&quot;B&quot;);
+expect(1 + 2).not.toBe(4);
 </code></pre>
 
             </section>
         
             <section >
                 <p>Synchronous</p>
-<pre><code class="language-typescript">describe('Math test', () =&gt; {
-    it('1 + 2 should be 3', () =&gt; {
-        const a = 1
-        const b = 2
-        expect(a + b).toBe(3)
-    })
-})
+<pre><code class="language-typescript">describe(&quot;Math test&quot;, () =&gt; {
+  it(&quot;1 + 2 should be 3&quot;, () =&gt; {
+    const a = 1;
+    const b = 2;
+    expect(a + b).toBe(3);
+  });
+});
 </code></pre>
 
             </section>
@@ -1853,48 +1809,50 @@ npm run start
 
   </div>
 
-  	
-	<script src="libs/reveal.js/4.1.3/reveal.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/zoom/zoom.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/notes/notes.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/search/search.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/markdown/markdown.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/highlight/highlight.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/menu/menu.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/math/math.js"></script>
+  <div class="line top"></div>
+  <div class="line bottom"></div>
+  <div class="line left"></div>
+  <div class="line right"></div>
 
-	<script src="libs/reveal.js/4.1.3/plugin/fullscreen/plugin.js"></script>
+  <script src="libs/reveal.js/4.3.1/reveal.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/notes/notes.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/markdown/markdown.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/highlight/highlight.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/math/math.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/fullscreen/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/animate/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/animate/svg.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/Chart.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/d3/d3.v3.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/d3.patch.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/d3/queue.v1.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/d3/topojson.v1.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/anything/function-plot.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/customcontrols/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/embed-tweet/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/chart/chart.min.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/chart/plugin.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/verticator/verticator.js"></script>
+
+<script src="libs/reveal.js/4.3.1/plugin/zoom/zoom.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/search/search.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/menu/menu.js"></script>
+<script src="libs/reveal.js/4.3.1/plugin/chalkboard/plugin.js"></script>
+
+<!--	<script src="libs/reveal.js/4.3.1/plugin/audio-slideshow/plugin.js"></script>  -->
+<!--	<script src="libs/reveal.js/4.3.1/plugin/audio-slideshow/recorder.js"></script>-->
+<!--	<script src="libs/reveal.js/4.3.1/plugin/audio-slideshow/RecordRTC.js"></script>-->
+
   
-  	<script src="libs/reveal.js/4.1.3/plugin/animate/plugin.js"></script>
-  	<script src="libs/reveal.js/4.1.3/plugin/animate/svg.min.js"></script>
-  
-  	<script src="libs/reveal.js/4.1.3/plugin/anything/plugin.js"></script>
-	  <script src="libs/reveal.js/4.1.3/plugin/anything/Chart.min.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/anything/d3/d3.v3.min.js"></script>				
-	<script src="libs/reveal.js/4.1.3/plugin/anything/d3.patch.js"></script>			
-	<script src="libs/reveal.js/4.1.3/plugin/anything/d3/queue.v1.min.js"></script>		
-	<script src="libs/reveal.js/4.1.3/plugin/anything/d3/topojson.v1.min.js"></script>		
-	<script src="libs/reveal.js/4.1.3/plugin/anything/function-plot.js"></script>
 
- <!--	<script src="libs/reveal.js/4.1.3/plugin/audio-slideshow/plugin.js"></script>  -->
-<!--	<script src="libs/reveal.js/4.1.3/plugin/audio-slideshow/recorder.js"></script>-->
-<!--	<script src="libs/reveal.js/4.1.3/plugin/audio-slideshow/RecordRTC.js"></script>-->
-
-<script src="libs/reveal.js/4.1.3/plugin/chalkboard/plugin.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/customcontrols/plugin.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/embed-tweet/plugin.js"></script>
-
-	<script src="libs/reveal.js/4.1.3/plugin/chart/chart.min.js"></script>
-	<script src="libs/reveal.js/4.1.3/plugin/chart/plugin.js"></script>
-
-  <script>
-
-		const printPlugins = [
-			RevealNotes, 
-			RevealHighlight,
-			RevealMath,
-			RevealAnimate,
-			RevealChalkboard, 
+<script>
+  const printPlugins = [
+      RevealNotes,
+      RevealHighlight,
+      RevealMath.MathJax3,
+      RevealAnimate,
+      RevealChalkboard, 
 			RevealEmbedTweet,
 			RevealChart,
 		];
@@ -1912,6 +1870,7 @@ npm run start
 				// poll
 				// question
 				// seminar
+				Verticator 
 				 ]
 
 
@@ -1919,93 +1878,93 @@ npm run start
 		// https://revealjs.com/initialization/
 		Reveal.initialize({
 			controls: true,
-			controlsTutorial: true,
-			controlsLayout: 'bottom-right',
-			controlsBackArrows: 'faded',
-			progress: true,
-			slideNumber: true,
-			//#showSlideNumber "all" "print" "speaker"
-			hash: true,//#  hash: false,
-			//# respondToHashChanges: true,
-			//# history: false,
-			keyboard: true,
-			//#keyboardCondition: null,
-			overview: true,
-			center: true,
-			touch: true,
-			loop: false,
-			rtl: false,
-			//#navigationMode: 'default', linear grid
-			shuffle: false,
-			fragments: true,
-			fragmentInURL: false,
-			embedded: false,
-			help: true,
-			//#pause: true
-			showNotes: false,
-			autoPlayMedia: false, // TODO fix this to a nullable value
-			//#preloadIframes: null. true false
-			//#autoAnimate: true
-			//#autoAnimateMatcher: null,
-			//#autoAnimateEasing: 'ease',
-			//autoAnimateDuration: 1.0,
-			//#autoAnimateUnmatched: true
-			//#autoAnimateStyles: []
-			autoSlide: 0, // TODO fix this to a falseable value
-			autoSlideStoppable: true,
-			autoSlideMethod: '0',
-			defaultTiming: 120,
-			mouseWheel: false,
-			//#previewLinks: false
-			//#postMessage: true,  // TODO : this can cause issues with the vscode api ???
-			//#postMessageEvents: false,
-			//#focusBodyOnPageVisibilityChange: true,
-			transition: 'slide',
-			transitionSpeed: 'default',
-			backgroundTransition: 'fade',
-			//#pdfMaxPagesPerSlide: Number.POSITIVE_INFINITY,
-			//#pdfSeparateFragments: true,
-			//#pdfPageHeightOffset: -1,
-			viewDistance: 3,
-			//#mobileViewDistance: 2,
-			display: 'block',
-			//#hideInactiveCursor: true,
-			//#hideCursorTime: 5000
+      controlsTutorial: true,
+      controlsLayout: 'bottom-right',
+      controlsBackArrows: 'faded',
+      progress: true,
+      slideNumber: true,
+      //#showSlideNumber "all" "print" "speaker"
+      hash: true, //# hash: false,
+      //# respondToHashChanges: true,
+      //# history: false,
+      keyboard: true,
+      //#keyboardCondition: null,
+      overview: true,
+      center: true,
+      touch: true,
+      loop: false,
+      rtl: false,
+      //#navigationMode: 'default', linear grid
+      shuffle: false,
+      fragments: true,
+      fragmentInURL: false,
+      embedded: false,
+      help: true,
+      //#pause: true
+      showNotes: false,
+      autoPlayMedia: false, // TODO fix this to a nullable value
+      //#preloadIframes: null. true false
+      //#autoAnimate: true
+      //#autoAnimateMatcher: null,
+      //#autoAnimateEasing: 'ease',
+      //autoAnimateDuration: 1.0,
+      //#autoAnimateUnmatched: true
+      //#autoAnimateStyles: []
+      autoSlide: 0, // TODO fix this to a falseable value
+      autoSlideStoppable: true,
+      autoSlideMethod: '0',
+      defaultTiming: 120,
+      mouseWheel: false,
+      //#previewLinks: false
+      //#postMessage: true, // TODO : this can cause issues with the vscode api ???
+      //#postMessageEvents: false,
+      //#focusBodyOnPageVisibilityChange: true,
+      transition: 'slide',
+      transitionSpeed: 'default',
+      backgroundTransition: 'fade',
+      //#pdfMaxPagesPerSlide: Number.POSITIVE_INFINITY,
+      //#pdfSeparateFragments: true,
+      //#pdfPageHeightOffset: -1,
+      viewDistance: 3,
+      //#mobileViewDistance: 2,
+      display: 'block',
+      //#hideInactiveCursor: true,
+      //#hideCursorTime: 5000
 
-			// Parallax Background
-			parallaxBackgroundImage: '',
-			parallaxBackgroundSize: '',
-			parallaxBackgroundHorizontal: 0,
-			parallaxBackgroundVertical: 0,
-			
-			//Presentation Size
-			width: 960,
+      // Parallax Background
+      parallaxBackgroundImage: '',
+      parallaxBackgroundSize: '',
+      parallaxBackgroundHorizontal: 0,
+      parallaxBackgroundVertical: 0,
+
+      //Presentation Size
+      width: 960,
 			height: 700,
 			margin: 0.04,
-			minScale: 0.2,
-			maxScale: 2,
-			disableLayout: false,
+      minScale: 0.2,
+      maxScale: 2,
+      disableLayout: false,
 
-			audio: {
-				prefix: 'audio/', 	// audio files are stored in the "audio" folder
-				suffix: '.ogg',		// audio files have the ".ogg" ending
-				textToSpeechURL: null,  // the URL to the text to speech converter
-				defaultNotes: false, 	// use slide notes as default for the text to speech converter
-				defaultText: false, 	// use slide text as default for the text to speech converter
-				advance: 0, 		// advance to next slide after given time in milliseconds after audio has played, use negative value to not advance
-				autoplay: false,	// automatically start slideshow
-				defaultDuration: 5,	// default duration in seconds if no audio is available
-				defaultAudios: true,	// try to play audios with names such as audio/1.2.ogg
-				playerOpacity: 0.05,	// opacity value of audio player if unfocused
-				playerStyle: 'position: fixed; bottom: 4px; left: 25%; width: 50%; height:75px; z-index: 33;', // style used for container of audio controls
-				startAtFragment: false, // when moving to a slide, start at the current fragment or at the start of the slide
-			},
-			
-			chalkboard: { // font-awesome.min.css must be available
-					//src: "chalkboard/chalkboard.json",
-					storage: "chalkboard-demo",
-				},
-			
+      audio: {
+        prefix: 'audio/', // audio files are stored in the "audio" folder
+        suffix: '.ogg', // audio files have the ".ogg" ending
+        textToSpeechURL: null, // the URL to the text to speech converter
+        defaultNotes: false, // use slide notes as default for the text to speech converter
+        defaultText: false, // use slide text as default for the text to speech converter
+        advance: 0, // advance to next slide after given time in milliseconds after audio has played, use negative value to not advance
+        autoplay: false, // automatically start slideshow
+        defaultDuration: 5, // default duration in seconds if no audio is available
+        defaultAudios: true, // try to play audios with names such as audio/1.2.ogg
+        playerOpacity: 0.05, // opacity value of audio player if unfocused
+        playerStyle: 'position: fixed; bottom: 4px; left: 25%; width: 50%; height:75px; z-index: 33;', // style used for container of audio controls
+        startAtFragment: false, // when moving to a slide, start at the current fragment or at the start of the slide
+      },
+      
+      chalkboard: { // font-awesome.min.css must be available
+        //src: "chalkboard/chalkboard.json",
+        storage: "chalkboard-demo",
+      },
+      
 			customcontrols: {
 					controls: [
       						{
@@ -2015,14 +1974,17 @@ npm run start
 						  action: 'Reveal.toggleOverview();'
 						}
 						,
-						{ icon: '<i class="fa fa-pen-square"></i>',
-						  title: 'Toggle chalkboard (B)',
-						  action: 'RevealChalkboard.toggleChalkboard();'
-						},
-						{ icon: '<i class="fa fa-pen"></i>',
-						  title: 'Toggle notes canvas (C)',
-						  action: 'RevealChalkboard.toggleNotesCanvas();'
-						}
+      {
+        icon: '<i class="fa fa-pen-square"></i>',
+        title: 'Toggle chalkboard (B)',
+        action: 'RevealChalkboard.toggleChalkboard();'
+      },
+      {
+        icon: '<i class="fa fa-pen"></i>',
+        title: 'Toggle notes canvas (C)',
+        action: 'RevealChalkboard.toggleNotesCanvas();'
+      }
+      
 				]
 			},
 			chart: {
@@ -2091,9 +2053,7 @@ npm run start
 			  }, 2500);
 			
     }
-		
-
-	</script>
+</script>
 
 </body>
 
