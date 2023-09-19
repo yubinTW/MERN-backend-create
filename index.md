@@ -1,12 +1,10 @@
 ---
-
-theme : "night"
+theme: "night"
 transition: "slide"
 highlightTheme: "monokai"
 # logoImg: "logo.png"
 slideNumber: true
 title: "MERN Backend"
-
 ---
 
 ### MERN Backend Practice
@@ -126,7 +124,7 @@ edit backend/tsconfig.json
 "exclude": ["node_modules"],
 
 "compilerOptions": {
-  "outDir": "./out",
+  "outDir": "./dist",
   "rootDir": "./src",
 }
 ```
@@ -146,36 +144,35 @@ create backend/src/server.ts
 ```typescript=
 import fastify, { FastifyInstance } from 'fastify'
 
-const server: FastifyInstance = fastify({
+export const serverOf: () => FastifyInstance = () => {
+ const server = fastify({
   logger: {
     transport: {
       target: 'pino-pretty'
     },
     level: 'debug'
   }
-})
+ })
 
-const startFastify: (port: number) => FastifyInstance = (port) => {
+ server.get('/ping', async (request, reply) => {
+    return reply.status(200).send({ msg: 'pong' })
+ })
+
+ return server
+
+}
+
+export const serverStart: (port: number) => (server: FastifyInstance) => Promise<FastifyInstance> = (port) => async (server) => {
   const listenAddress = '0.0.0.0'
   const fastifyConfig = {
     port: port,
     host: listenAddress
   }
 
-  server.listen(fastifyConfig, (error, _) => {
-    if (error) {
-      console.error(error)
-    }
-  })
-
-  server.get('/ping', async (request, reply) => {
-    return reply.status(200).send({ msg: 'pong' })
-  })
+  await server.listen(fastifyConfig)
 
   return server
 }
-
-export { startFastify }
 ```
 
 --
@@ -183,16 +180,21 @@ export { startFastify }
 create backend/src/index.ts
 
 ```typescript=
-import { startFastify } from './server'
+import { serverOf, serverStart } from './server'
 import * as dotenv from 'dotenv'
 
 dotenv.config()
-const port = process.env.FASTIFY_PORT || '8888'
+const port = parseInt(process.env.FASTIFY_PORT || '8888')
 
-// Start your server
-const server = startFastify(parseInt(port))
+const server = serverOf()
 
-export { server }
+serverStart(port)(server)
+  .then(() => {
+    console.log(`Server start successfully`)
+  })
+  .catch((error) => {
+    console.log(`Failed to start server: ${error}`)
+  })
 ```
 
 --
@@ -208,7 +210,7 @@ tsc
 - run with node
 
 ```
-node out/index.js
+node dist/index.js
 ```
 
 --
@@ -220,7 +222,7 @@ Define custom npm scripts
 ```json=
 "scripts": {
   "build": "tsc",
-  "start": "node out/index.js"
+  "start": "node dist/index.js"
 },
 ```
 
@@ -242,6 +244,7 @@ visit the endpoint
 ---
 
 API client
+
 - Postman
 - curl
 - Thunder Client (vscode extension)
@@ -273,14 +276,79 @@ create a .http file, send request
 
 ![](res/2021-11-11-22-55-31.png)
 
+---
+
+### prettier
+
+--
+
+install prettier
+
+```
+npm i -D prettier
+```
+
+--
+
+add backend/.prettierrc.json
+
+```
+{
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 120,
+  "trailingComma": "none",
+  "arrowParens": "always"
+}
+```
+
+ref: https://prettier.io/docs/en/options.html
+
+--
+
+- add the script in package.json
+
+```
+"fix-prettier": "prettier --write \"./src/**/*.ts\""
+```
+
+- format code by prettier
+
+```
+npm run fix-prettier
+```
 
 ---
 
-create ```.gitignore```
+#### Rebuild automatically when the code is changed
+
+--
+
+- install concurrently and nodemon
+
+```
+npm i -D concurrently nodemon
+```
+
+- add the script in package.json
+
+```
+"dev": "concurrently \"tsc -w \" \"nodemon dist/index.js\""
+```
+
+- run the script
+
+```
+npm run dev
+```
+
+---
+
+create `.gitignore`
 
 ```plaintext=
 node_modules
-out
+dist
 .env
 ```
 
@@ -376,13 +444,10 @@ import { establishConnection } from './plugins/mongoose'
 
 // ...
 
-  server.listen(fastifyConfig, (error, _) => {
-      if (error) {
-        console.error(error)
-      }
-      const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myMERN'
-      establishConnection(connectionString)
-  })
+await server.listen(fastifyConfig)
+
+const connectionString = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/myMERN'
+await establishConnection(connectionString)
 
 // ...
 ```
@@ -393,7 +458,7 @@ Start server
 
 ![](res/2021-08-17-03-19-36.png)
 
-```MongoDB connection successful```
+`MongoDB connection successful`
 
 ---
 
@@ -408,12 +473,10 @@ Define interface
 create backend/src/types/cat.ts
 
 ```typescript=
-interface ICat {
+export type Cat = {
     name: string
     weight: number
 }
-
-export { ICat }
 ```
 
 --
@@ -423,8 +486,8 @@ Add mongo schema
 create backend/src/models/cat.ts
 
 ```typescript=
-import { model, Schema } from 'mongoose'
-import { ICat } from '../types/cat'
+import mongoose, { model, Schema } from 'mongoose'
+import { Cat } from '../types/cat'
 
 const catSchema: Schema = new Schema(
     {
@@ -442,7 +505,7 @@ const catSchema: Schema = new Schema(
     }
 )
 
-export default model<ICat>('Cat', catSchema)
+export default mongoose.models.Cat || model<Cat>('Cat', catSchema)
 ```
 
 --
@@ -458,30 +521,13 @@ Get Cats
 
 Add Cat Repo
 
-create backend/src/repo/cat-repo.ts
+create backend/src/repo/cat.ts
 
 ```typescript=
-import { ICat } from './../types/cat'
-import Cat from './../models/cat'
+import { Cat } from '../types/cat'
+import CatModel from '../models/cat'
 
-interface CatRepo {
-  getCats(): Promise<Array<ICat>>
-}
-
-class CatRepoImpl implements CatRepo {
-  private constructor() {}
-
-  static of(): CatRepoImpl {
-    return new CatRepoImpl()
-  }
-
-  async getCats(): Promise<Array<ICat>> {
-    return Cat.find()
-  }
-
-}
-
-export { CatRepoImpl }
+export const getCats: () => Promise<Array<ICat>> = () => CatModel.find({})
 ```
 
 --
@@ -495,7 +541,7 @@ edit backend/src/server.ts
 - GET /cats
 
 ```typescript=
-import { CatRepoImpl } from './repo/cat-repo'
+import { CatRepoImpl } from './repo/cat'
 // ...
 server.get('/cats', async (request, reply) => {
   const catRepo = CatRepoImpl.of()
@@ -526,35 +572,15 @@ Add Cat
 
 --
 
-edit backend/src/repo/cat-repo.ts
+edit backend/src/repo/cat.ts
 
 ```typescript=
-import { ICat } from './../types/cat'
-import Cat from './../models/cat'
+import { Cat } from './../types/cat'
+import CatModel from './../models/cat'
 
-interface CatRepo {
-  getCats(): Promise<Array<ICat>>
-  addCat(catBody: ICat): Promise<ICat>
-}
+export const getCats: () => Promise<Array<ICat>> = () => Cat.find({})
 
-class CatRepoImpl implements CatRepo {
-  private constructor() {}
-
-  static of(): CatRepoImpl {
-    return new CatRepoImpl()
-  }
-
-  async getCats(): Promise<Array<ICat>> {
-    return Cat.find()
-  }
-
-  async addCat(catBody: ICat): Promise<ICat> {
-    return Cat.create(catBody)
-  }
-
-}
-
-export { CatRepoImpl }
+export const addCat: (catBody: ICat) => Promise<ICat> = (catBody) => Cat.create(catBody)
 ```
 
 --
@@ -568,13 +594,12 @@ edit backend/src/server.ts
 - POST /cats
 
 ```typescript=
-import { ICat } from './types/cat'
+import { Cat } from './types/cat'
 // ...
 server.post('/cats', async (request, reply) => {
-  const catRepo = CatRepoImpl.of()
   try {
     const catBody = request.body as ICat
-    const cat = await catRepo.addCat(catBody)
+    const cat = await addCat(catBody)
     return reply.status(201).send({ cat })
   } catch (error) {
     return reply.status(500).send({ msg: `Internal Server Error: ${error}` })
@@ -608,7 +633,7 @@ Get /cats again
 
 ---
 
-Add id and remove __v for the mongoose schema
+Add id and remove \_\_v for the mongoose schema
 
 --
 
@@ -628,73 +653,6 @@ https://mongoosejs.com/docs/tutorials/virtuals.html#virtuals-in-json
 Get /cats again
 
 ![](res/2021-11-16-01-36-47.png)
-
-
----
-
-#### Rebuild automatically when the code is changed
-
---
-
-- install concurrently and nodemon
-
-```
-npm i -D concurrently nodemon
-```
-
-- add the script in package.json
-
-```
-"dev": "concurrently \"tsc -w \" \"nodemon out/index.js\""
-```
-
-- run the script
-
-```
-npm run dev
-```
-
----
-
-### prettier
-
---
-
-install prettier
-
-```
-npm i -D prettier
-```
-
---
-
-add backend/.prettierrc
-
-```
-{
-  "semi": false,
-  "singleQuote": true,
-  "printWidth": 120,
-  "trailingComma": "none",
-  "arrowParens": "always"
-}
-```
-
-ref: https://prettier.io/docs/en/options.html
-
---
-
-- add the script in package.json
-
-```
-"fix-prettier": "prettier --write \"./src/**/*.ts\""
-```
-
-- format code by prettier
-
-```
-npm run fix-prettier
-```
 
 ---
 
@@ -751,7 +709,7 @@ export { CatRouter }
 edit backend/src/server.ts
 
 ```typescript
-server.register(CatRouter, { prefix: '/v1' })
+server.register(CatRouter, { prefix: "/v1" });
 ```
 
 --
@@ -766,7 +724,6 @@ DIY: implement update and delete API
 - https://mongoosejs.com/docs/guide.html
 
 ---
-
 
 ### url parameter
 
@@ -1100,7 +1057,7 @@ Jest config
 
 https://jestjs.io/docs/configuration
 
-create ```backend/jest.config.js```
+create `backend/jest.config.js`
 
 ```javascript
 module.exports = {
@@ -1109,20 +1066,10 @@ module.exports = {
     "^.+\\.(t|j)sx?$": "ts-jest",
   },
   testEnvironment: "node",
-  moduleFileExtensions: [
-    "ts",
-    "tsx",
-    "js",
-    "jsx",
-    "json",
-    "node",
-  ],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   testTimeout: 20000,
-  testPathIgnorePatterns: [
-    "/node_modules/",
-    "/out/"
-  ]
-}
+  testPathIgnorePatterns: ["/node_modules/", "/out/"],
+};
 ```
 
 --
@@ -1131,7 +1078,7 @@ npm scripts
 
 https://jestjs.io/docs/cli
 
-```backend/package.json```
+`backend/package.json`
 
 ```
 "scripts": {
@@ -1147,7 +1094,7 @@ https://jestjs.io/docs/cli
 
 --
 
-Create ```src/tests/server.spec.ts```
+Create `src/tests/server.spec.ts`
 
 ```typescript=
 import { FastifyInstance } from 'fastify'
@@ -1160,7 +1107,7 @@ describe('Server test', () => {
         server = startFastify(8888)
         await server.ready()
     })
-    
+
     afterAll(async () => {
         try {
             await server.close()
@@ -1183,7 +1130,7 @@ describe('Server test', () => {
 
 Not connect to dev database when runnning test case
 
-update ```backend/src/server.ts```
+update `backend/src/server.ts`
 
 ```typescript=
 if (process.env.NODE_ENV !== 'test') {
@@ -1204,24 +1151,24 @@ npm run test
 #### describe & it
 
 ```typescript
-describe('Server test', () => {
-    it('should successfully get a pong string', () => {
-        // Some testing condition
-    })
-})
+describe("Server test", () => {
+  it("should successfully get a pong string", () => {
+    // Some testing condition
+  });
+});
 ```
 
 --
 
 ```typescript
-describe('API test', () => {
-    it('should successfully get a pong string', () => {
-        // Some testing condition
-    })
-    it('test B', () => {})
-    it('test C', () => {})
-    it('test D', () => {})
-})
+describe("API test", () => {
+  it("should successfully get a pong string", () => {
+    // Some testing condition
+  });
+  it("test B", () => {});
+  it("test C", () => {});
+  it("test D", () => {});
+});
 ```
 
 --
@@ -1229,8 +1176,8 @@ describe('API test', () => {
 #### expect
 
 ```typescript
-expect(response.statusCode).toBe(200)
-expect(response.body).toStrictEqual(JSON.stringify({ msg: 'pong' }))
+expect(response.statusCode).toBe(200);
+expect(response.body).toStrictEqual(JSON.stringify({ msg: "pong" }));
 ```
 
 - toBe() - to compare primitive values or to check referential identity of object instances
@@ -1241,10 +1188,10 @@ expect(response.body).toStrictEqual(JSON.stringify({ msg: 'pong' }))
 https://jestjs.io/docs/expect
 
 ```typescript
-expect(1 + 2).toBeLessThan(4)
-expect(1 + 2).toBeLessThanOrEqual(3)
-expect(['A', 'B', 'C']).toContain('B')  
-expect(1 + 2).not.toBe(4)
+expect(1 + 2).toBeLessThan(4);
+expect(1 + 2).toBeLessThanOrEqual(3);
+expect(["A", "B", "C"]).toContain("B");
+expect(1 + 2).not.toBe(4);
 ```
 
 --
@@ -1252,13 +1199,13 @@ expect(1 + 2).not.toBe(4)
 Synchronous
 
 ```typescript
-describe('Math test', () => {
-    it('1 + 2 should be 3', () => {
-        const a = 1
-        const b = 2
-        expect(a + b).toBe(3)
-    })
-})
+describe("Math test", () => {
+  it("1 + 2 should be 3", () => {
+    const a = 1;
+    const b = 2;
+    expect(a + b).toBe(3);
+  });
+});
 ```
 
 --
@@ -1293,7 +1240,6 @@ mongodb-memory-server
 
 --
 
-
 Install mongodb-memory-server
 
 ```
@@ -1304,7 +1250,7 @@ https://github.com/nodkz/mongodb-memory-server
 
 --
 
-Create ```src/tests/db.ts```
+Create `src/tests/db.ts`
 
 ```typescript=
 import mongoose from 'mongoose'
@@ -1343,7 +1289,6 @@ export const clearDatabase = async () => {
 ```
 
 --
-
 
 ### API Test
 
@@ -1405,7 +1350,6 @@ describe('Cat API test', () => {
 
 })
 ```
-
 
 ---
 
@@ -1495,7 +1439,6 @@ https://www.fastify.io/docs/latest/Guides/Testing/
 --
 
 MERN Arch.
-
 
 - Frontend
   - React
